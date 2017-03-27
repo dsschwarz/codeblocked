@@ -50,9 +50,17 @@ $(function () {
     renderer.render();
 
     renderer.reporter.log("Select a block to view and edit its details");
-    renderer.reporter.log("Click the run button to run the program");
-    renderer.reporter.log("Use the place button to add new blocks. Click place again to end place mode");
-    renderer.reporter.log("Use the connect button to connect an output to an input");
-    renderer.reporter.log("Blocks can be dragged around");
+    setTimeout(() => {
+        renderer.reporter.log("Click the run button to run the program");
+        setTimeout(() => {
+            renderer.reporter.log("Use the place button to add new blocks. Click place again to end place mode");
+            setTimeout(() => {
+                renderer.reporter.log("Use the connect button to connect an output to an input");
+                setTimeout(() => {
+                    renderer.reporter.log("Blocks can be dragged around");
+                }, 2000);
+            }, 2000);
+        }, 2000);
+    }, 2000);
 
 });
