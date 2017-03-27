@@ -27,6 +27,11 @@ class Renderer {
             that.setMode(Modes.Connection)
         });
 
+        $("#run-btn").on("click", function () {
+            var evaluator = new Evaluator(that.program);
+            evaluator.run();
+        });
+
         this.sidePanel = createSidePanelVM();
         this.currentlySelectedBlockId = null;
 

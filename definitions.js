@@ -204,6 +204,19 @@ class Module {
         });
     }
 
+    getConnectionFromId(fromBlockId) {
+        return _.findWhere(this.connections, {
+            fromBlockId: fromBlockId
+        });
+    }
+
+    getConnectionToId(toBlockId, inputIndex) {
+        return _.findWhere(this.connections, {
+            toBlockId: toBlockId,
+            inputIndex: inputIndex
+        });
+    }
+
     createConnection(fromBlock, toBlock, inputIndex) {
         // if there's already an existing connection to this input, remove it
         var matchingConnections = _.where(this.connections, {

@@ -1,32 +1,72 @@
-class ExecutionMetadata {
-    constructor(inputs, inputEvaluationResults, inputEvaluationCalls) {
-        this.inputs = inputs;
-        this.inputEvaluationResults = inputEvaluationResults;
-        this.inputEvaluationCalls = inputEvaluationCalls;
+/**
+ * The evaluator only runs once. It finds the leaf nodes, then evaluates each ancestor. Evaluated blocks
+ * are stored by id in the evaluation result map.
+ */
+class Evaluator {
+    constructor(program) {
+        this.program = program;
+
+        this.evaluationResults = {};
     }
 
-    getInputValue(input) {
-        if (this.inputEvaluationResults[input.name] != undefined) {
-            return this.inputEvaluationResults[input.name];
+    run() {
+        var evaluator = this;
+        var leafBlocks = this.program.topLevelModule.blocks.filter(function (block) {
+            return evaluator.program.topLevelModule.getConnectionFromId(block.id) == undefined;
+        });
+
+        leafBlocks.forEach(function (block) {
+            evaluator.getResult(block.id);
+        })
+    }
+
+    evaluateBlock(block) {
+        var evaluator = this;
+        var inputs = block.getInputs();
+        var module = block.getModule();
+        var dependencies = [];
+        _.each(inputs, function (input, index) {
+            var connection = module.getConnectionToId(block.id, index);
+            if (connection) {
+                dependencies[index] = connection;
+            } else {
+                console.error("Missing input for block: " + block.name);
+                console.log(block);
+                throw new Error("Evaluation failed due to missing input");
+            }
+        });
+
+        var inputValues = [];
+        _.each(dependencies, function (connection, index) {
+            inputValues[index] = evaluator.getResult(connection.fromBlockId);
+        });
+
+        var scope = {};
+        _.each(inputValues, function (inputValue, index) {
+            var input = inputs[index];
+            scope[input.name] = inputValue;
+        });
+
+        return _execute.call(scope, block.getContents());
+    }
+
+    // gets the result of evaluating the block with id blockId
+    getResult(blockId) {
+        if (this.evaluationResults[blockId]) {
+            return this.evaluationResults[blockId];
         } else {
-            return this.inputEvaluationResults = this.inputEvaluationCalls[input.name]();
+            var block = this.program.topLevelModule.findBlock(blockId);
+            if (!block) {
+                throw new Error("Block with id " + blockId + " does not exist");
+            }
+
+            var result = this.evaluateBlock(block);
+            this.evaluationResults[blockId] = result;
+            return result;
         }
     }
 }
 
-
-function execute(str) {
-    eval(str); // str can be modified from eval code, but this shouldn't matter
-}
-
-function executeString(str, metadata) {
-    var scope = buildScope(metadata);
-    return execute.call(scope, str);
-}
-
-function buildScope(metadata) {
-    var scope = {};
-    metadata.inputs.forEach(function addInputParam(input) {
-        scope[inputName] = metadata.getInputValue(input); // gets the precomputed value
-    });
+function _execute(string) {
+    return eval(string);
 }
