@@ -53,6 +53,17 @@ body {
 
 .action-bar {
     flex-grow: 0;
+    padding-bottom: 20px;
+}
+
+.action-bar button {
+    height: 80px;
+    width: 100px;
+    background-color: #57b;
+    color: #eee;
+    font-family: fantasy;
+    margin: 0;
+    padding: 10px 0;
 }
 
 .click-area {
@@ -65,14 +76,11 @@ body {
     stroke-width: 1px;
 }
 
-.side-panel {
-    border: 1px solid darkgray;
-    width: 250px;
-    overflow-y: auto;
-}
-
 
  /*svg styles*/
+svg {
+    border: 2px solid #17416d;
+}
 svg.mode-placement .moduleElement:hover .click-catcher {
     stroke: maroon;
     stroke-width: 2px;
@@ -88,6 +96,15 @@ svg.mode-connection .io-area:hover .io-line {
 }
 
 /*side panel*/
+
+.side-panel {
+    border: 2px solid #17416d;
+    width: 250px;
+    overflow-y: auto;
+    background-color: #b7d5ec;
+    padding: 10px;
+}
+
 .subsection-title {
     margin-top: 10px;
     margin-bottom: 5px;
@@ -104,4 +121,23 @@ svg.mode-connection .io-area:hover .io-line {
 
 .blueprint-contents textarea {
     min-height: 5em;
+}
+
+.messages {
+    background-color: white;
+    overflow-y: scroll;
+    height: 150px;
+}
+
+.message {
+    font-size: 10px;
+    font-family: sans-serif;
+}
+
+.message.error {
+    color: red;
+}
+
+.message.warn {
+    color: #d8c827;
 }

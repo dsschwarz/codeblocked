@@ -13,6 +13,7 @@ class Renderer {
         this.lastMousePosition = {x: 0, y: 0};
         this.container = d3.select("svg");
         this.connectionHandler = new ConnectionHandler();
+        this.reporter = new Reporter();
         this.container.on("mousemove", function () {
             that.lastMousePosition.x = d3.event.offsetX;
             that.lastMousePosition.y = d3.event.offsetY;
@@ -28,9 +29,10 @@ class Renderer {
         });
 
         $("#run-btn").on("click", function () {
-            var evaluator = new Evaluator(that.program);
+            var evaluator = new Evaluator(that.program, that.reporter);
             evaluator.run();
         });
+
 
         this.sidePanel = createSidePanelVM(this);
         this.currentlySelectedBlockId = null;

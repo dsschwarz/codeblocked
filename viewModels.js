@@ -8,6 +8,14 @@ createSidePanelVM = function (renderer) {
     viewModel.output = ko.observable(null); // Type
     viewModel.contents = ko.observable(""); // Type
     viewModel.showBlockInfo = ko.observable(false);
+    viewModel.messages = ko.observableArray([]);
+
+    renderer.reporter.subscribe(function () {
+        viewModel.messages(renderer.reporter.messages);
+
+        var el = $(".messages")[0];
+        el.scrollTop = el.scrollHeight;
+    });
 
     viewModel.setSelectedBlock = function (block) {
         selectedBlock(block);

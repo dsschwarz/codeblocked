@@ -20,7 +20,7 @@ $(function () {
 
     var block4 = Block.create(160, 300);
     block4.name = "Output";
-    block4.setContents("alert('Multiplied: ' + this.value)");
+    block4.setContents("log('Multiplied: ' + this.value)");
     block4.addInput(new Input("value"));
 
     var block5 = Block.create(300, 170);
@@ -30,7 +30,7 @@ $(function () {
 
     var block6 = Block.create(300, 300);
     block6.name = "Output";
-    block6.setContents("alert('Squared: ' + this.value)");
+    block6.setContents("log('Squared: ' + this.value)");
     block6.addInput(new Input("value"));
 
     program.topLevelModule.addBlock(block1);
@@ -48,4 +48,11 @@ $(function () {
 
     renderer = new Renderer(program);
     renderer.render();
+
+    renderer.reporter.log("Select a block to view and edit its details");
+    renderer.reporter.log("Click the run button to run the program");
+    renderer.reporter.log("Use the place button to add new blocks. Click place again to end place mode");
+    renderer.reporter.log("Use the connect button to connect an output to an input");
+    renderer.reporter.log("Blocks can be dragged around");
+
 });
