@@ -13,6 +13,10 @@
     stroke-width: 1px;
 }
 
+.block-name-label {
+    cursor: default;
+}
+
 html, body {
     height: 100%;
 }

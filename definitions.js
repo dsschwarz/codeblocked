@@ -1,5 +1,5 @@
 var DEFAULT_WIDTH = 100;
-var DEFAULT_HEIGHT = 100;
+var DEFAULT_HEIGHT = 80;
 var IO_LINE_LENGTH = 5;
 
 var nextId = (function () {

@@ -259,6 +259,10 @@ class Renderer {
         newBlocks.append("rect")
             .classed("background", true);
 
+        newBlocks.append("text")
+            .classed("block-name-label", true)
+            .attr("text-anchor", "middle");
+
         var allBlocks = blockElements.merge(newBlocks)
             .classed("selected", data => data.id == renderer.currentlySelectedBlockId)
             .attr("transform", data => _translate(data.x, data.y) );
@@ -268,6 +272,11 @@ class Renderer {
             .attr("y", 0)
             .attr("width", data => data.width)
             .attr("height", data => data.height);
+
+        allBlocks.selectAll(".block-name-label")
+            .attr("x", data => data.width/2)
+            .attr("y", data => data.height/2)
+            .text(data => data.name);
 
         blockElements.exit().remove();
 
