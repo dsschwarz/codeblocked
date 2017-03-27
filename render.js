@@ -32,7 +32,7 @@ class Renderer {
             evaluator.run();
         });
 
-        this.sidePanel = createSidePanelVM();
+        this.sidePanel = createSidePanelVM(this);
         this.currentlySelectedBlockId = null;
 
         ko.applyBindings(this.sidePanel, $(".side-panel")[0]);
@@ -261,7 +261,8 @@ class Renderer {
 
         newBlocks.append("text")
             .classed("block-name-label", true)
-            .attr("text-anchor", "middle");
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle");
 
         var allBlocks = blockElements.merge(newBlocks)
             .classed("selected", data => data.id == renderer.currentlySelectedBlockId)

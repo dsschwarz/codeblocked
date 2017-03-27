@@ -27,6 +27,7 @@ createSidePanelVM = function (renderer) {
         viewModel.blockName(block.name);
         subscriptions.push(viewModel.blockName.subscribe((newValue) => {
             block.setName(newValue);
+            _updateView();
         }));
 
         viewModel.inputs(block.getInputs().map(function (input) {
@@ -54,12 +55,17 @@ createSidePanelVM = function (renderer) {
     viewModel.addInput = function () {
         selectedBlock().createInput();
         updateSidePanel();
+        _updateView();
     };
 
     var _shouldShowBlockInfo = function () {
         if (selectedBlock()) {
             return true;
         }
+    };
+
+    var _updateView = function () {
+        renderer.render();
     };
 
     return viewModel;

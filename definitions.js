@@ -87,6 +87,14 @@ class Block {
     }
 
     /**
+     * Change the name of this block
+     * @param newName
+     */
+    setName(newName) {
+        this.name = newName;
+    }
+
+    /**
      * @returns {{x: Number, y: Number}}
      */
     getOutputPosition() {
