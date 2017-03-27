@@ -1,0 +1,103 @@
+.code-block .background {
+    stroke: black;
+    stroke-width: 2px;
+    fill: aliceblue;
+}
+
+.code-block.selected .background {
+    stroke: #d8a527;
+}
+
+.connection {
+    stroke: #111;
+    stroke-width: 1px;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: gainsboro;
+    margin: 0;
+}
+
+.click-catcher {
+    fill-opacity: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.ghostBlock {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.flex-grow {
+    flex-grow: 1;
+}
+
+.layout-vertical {
+    display: flex;
+    flex-direction: column;
+}
+
+.layout-horizontal {
+    display: flex;
+    flex-direction: row;
+}
+
+.action-bar {
+    flex-grow: 0;
+}
+
+.click-area {
+    opacity: 0;
+
+}
+
+.io-line {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+.side-panel {
+    border: 1px solid darkgray;
+    width: 250px;
+    overflow-y: auto;
+}
+
+
+ /*svg styles*/
+svg.mode-placement .moduleElement:hover .click-catcher {
+    stroke: maroon;
+    stroke-width: 2px;
+    cursor: pointer;
+}
+
+svg.mode-connection .io-area:hover {
+    cursor: pointer;
+}
+
+svg.mode-connection .io-area:hover .io-line {
+    stroke-width: 2px;
+}
+
+/*side panel*/
+.subsection-title {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.input-container {
+    display: flex;
+}
+
+.input-container .input-name {
+    flex-shrink: 1;
+    flex-basis: 50%;
+}
+
+.blueprint-contents textarea {
+    min-height: 5em;
+}
