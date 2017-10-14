@@ -7,6 +7,7 @@ class Evaluator {
         this.program = program;
         this.reporter = reporter;
 
+        // Map of blockId:String -> result of evaluating block. If undefined, assume block is not evaluated yet
         this.evaluationResults = {};
     }
 
@@ -51,7 +52,7 @@ class Evaluator {
 
     // gets the result of evaluating the block with id blockId
     getResult(blockId) {
-        if (this.evaluationResults[blockId]) {
+        if (this.evaluationResults[blockId] != undefined) {
             return this.evaluationResults[blockId];
         } else {
             var block = this.program.topLevelModule.findBlock(blockId);
@@ -60,6 +61,9 @@ class Evaluator {
             }
 
             var result = this.evaluateBlock(block);
+            if (result == undefined) {
+                this.reporter.warn("Got undefined when evaluating block: " + blockId);
+            }
             this.evaluationResults[blockId] = result;
             return result;
         }
