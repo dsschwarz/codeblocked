@@ -1,72 +1,164 @@
-/**
- * The evaluator only runs once. It finds the leaf nodes, then evaluates each ancestor. Evaluated blocks
- * are stored by id in the evaluation result map.
- */
-class Evaluator {
+class ProgramEvaluator {
     constructor(program, reporter) {
         this.program = program;
         this.reporter = reporter;
 
-        // Map of blockId:String -> result of evaluating block. If undefined, assume block is not evaluated yet
-        this.evaluationResults = {};
+        // implicit assumption: every evaluator in this list is a dependency of the previous evaluator
+        // Order is VERY important
+        this.moduleEvaluators = [this._createModuleEvaluator(program.topLevelModule)];
     }
 
     run() {
-        var evaluator = this;
-        var leafBlocks = this.program.topLevelModule.blocks.filter(function (block) {
-            return evaluator.program.topLevelModule.getConnectionFromId(block.id) == undefined;
-        });
-
-        leafBlocks.forEach(function (block) {
-            evaluator.getResult(block.id);
-        })
+        while (this.moduleEvaluators.length > 0) {
+            var evaluator = this.moduleEvaluators.pop();
+            var result = evaluator.runOnce();
+            if (result.completed()) {
+                if (this.moduleEvaluators.length > 0) {
+                    this.moduleEvaluators[this.moduleEvaluators.length - 1].setDependencyResult(result.outputValue);
+                }
+            } else {
+                this.moduleEvaluators.push(evaluator);
+                if (result.moduleDependency) {
+                    this.moduleEvaluators.push(this._createModuleEvaluator(result.moduleDependency));
+                }
+            }
+        }
     }
 
-    evaluateBlock(block) {
-        var evaluator = this;
-        var inputs = block.getInputs();
-        var module = block.getModule();
-        var dependencies = [];
-        _.each(inputs, function (input, index) {
-            var connection = module.getConnectionToId(block.id, index);
-            if (connection) {
-                dependencies[index] = connection;
+    addModule(module) {
+        this.moduleEvaluators.push(this._createModuleEvaluator(module));
+    }
+
+    _createModuleEvaluator(module) {
+        return new ModuleEvaluator(module, this.reporter)
+    }
+}
+
+
+class ModuleEvaluatorResultCompleted {
+    constructor(outputValue) {
+        this.outputValue = outputValue;
+    }
+
+    completed() {
+        return true;
+    }
+}
+class ModuleEvaluatorResultIncomplete {
+    completed() {
+        return false;
+    }
+}
+class ModuleEvaluatorResultHasDependency {
+    constructor(moduleDependency) {
+        if (moduleDependency == undefined) {throw "Module dependency undefined"}
+        this.moduleDependency = moduleDependency;
+    }
+
+    completed() {
+        return false;
+    }
+}
+
+function _partitionPendingAndReadyBlocks(evaluationBlocks) {
+    return _.partition(evaluationBlocks, function (evaluationBlock) {
+        return !evaluationBlock.ready()
+    });
+}
+
+class ModuleEvaluator {
+    /**
+     * @param module {Module}
+     * @param reporter {Reporter}
+     */
+    constructor(module, reporter) {
+        this.module = module;
+        this.reporter = reporter;
+
+        var evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
+        var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(evaluationBlocks);
+
+        this.pendingBlocks = pendingAndReadyBlocks[0];
+        this.readyBlocks = pendingAndReadyBlocks[1];
+
+        this._latestResult = undefined;
+        this._hasLatestResult = false;
+    }
+
+    /**
+     * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete | ModuleEvaluatorResultHasDependency}
+     */
+    runOnce() {
+        var currentBlock = this.readyBlocks.pop();
+        if (!currentBlock.ready()) {
+            throw "Ready block is not ready"
+        }
+
+        if (typeof currentBlock.block.getContents() == "string") {
+            var result = this.evaluateBlock(currentBlock);
+            return this.broadcastResult(result, currentBlock.block);
+        } else {
+            if (this._hasLatestResult) {
+                this._hasLatestResult = false;
+                return this.broadcastResult(this._latestResult, currentBlock.block);
             } else {
-                evaluator.reporter.error("Missing input for block: " + block.name);
+                this.readyBlocks.push(currentBlock);
+                var module = currentBlock.block.getContents(); // TODO get the module
+                return ModuleEvaluatorResultHasDependency(module);
+            }
+        }
+    }
+
+    /**
+     * @param result {*}
+     * @param fromBlock {Block}
+     * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete}
+     */
+    broadcastResult(result, fromBlock) {
+        var dependencies = {}; // quick lookup of dependent blocks
+        this.module.getConnectionsFromId(fromBlock.id).forEach(function (connection) {
+            dependencies[connection.toBlockId] = connection;
+        });
+        this.pendingBlocks.forEach(function (evaluationBlock) {
+            var connection = dependencies[evaluationBlock.block.id];
+            if (connection) {
+                evaluationBlock.inputs[connection.inputIndex].setValue(result);
             }
         });
 
-        var inputValues = [];
-        _.each(dependencies, function (connection, index) {
-            inputValues[index] = evaluator.getResult(connection.fromBlockId);
-        });
+        var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(this.pendingBlocks);
+        this.pendingBlocks = pendingAndReadyBlocks[0];
+        this.readyBlocks.push.apply(this.readyBlocks, pendingAndReadyBlocks[1]);
+
+        if (this.pendingBlocks.length == 0 && this.readyBlocks.length == 0) {
+            return new ModuleEvaluatorResultCompleted(result);
+        } else {
+            if (this.readyBlocks.length == 0) {
+                throw "Deadlock detected"
+            }
+            return new ModuleEvaluatorResultIncomplete();
+        }
+    }
+
+    setDependencyResult(result) {
+        if (this._hasLatestResult) {throw "Setting a new result before consuming the latest one"}
+
+        this._latestResult = result;
+        this._hasLatestResult = true;
+    }
+
+    /**
+     * @param evaluationBlock {EvaluationBlock}
+     * @returns {*}
+     */
+    evaluateBlock(evaluationBlock) {
 
         var scope = {};
-        _.each(inputValues, function (inputValue, index) {
-            var input = inputs[index];
-            scope[input.name] = inputValue;
+        evaluationBlock.inputs.forEach(function (evaluationInput) {
+            scope[evaluationInput.name] = evaluationInput.value;
         });
 
-        return _execute.call(scope, block.getContents(), this.reporter);
-    }
-
-    // gets the result of evaluating the block with id blockId
-    getResult(blockId) {
-        if (this.evaluationResults[blockId] != undefined) {
-            return this.evaluationResults[blockId];
-        } else {
-            var block = this.program.topLevelModule.findBlock(blockId);
-            if (!block) {
-                this.reporter.error("Block with id " + blockId + " does not exist");
-            }
-
-            var result = this.evaluateBlock(block);
-            if (result == undefined) {
-                this.reporter.warn("Got undefined when evaluating block: " + blockId);
-            }
-            this.evaluationResults[blockId] = result;
-            return result;
-        }
+        return _execute.call(scope, evaluationBlock.block.getContents(), this.reporter);
     }
 }
 
@@ -112,5 +204,42 @@ class Reporter {
 
     _notify() {
         this.listeners.forEach((fn) => fn.call());
+    }
+}
+
+class EvaluationBlock {
+    /**
+     * @param block {Block}
+     */
+    constructor(block) {
+        /**
+         * @type {Array<EvaluationInput>}
+         */
+        this.inputs = block.getInputs().map(function (input) {return new EvaluationInput(input)});
+        this.block = block;
+    }
+
+    ready() {
+        return _.every(this.inputs, function (input) { return input.satisfied === true })
+    }
+}
+
+class EvaluationInput {
+    /**
+     * @param input {Input}
+     */
+    constructor(input) {
+        this.name = input.name;
+        this.value = undefined;
+        this.satisfied = false;
+    }
+
+    setValue(value) {
+        if (this.satisfied) {
+            throw "Value already set for input " + this.name
+        }
+
+        this.value = value;
+        this.satisfied = true;
     }
 }

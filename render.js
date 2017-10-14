@@ -29,7 +29,7 @@ class Renderer {
         });
 
         $("#run-btn").on("click", function () {
-            var evaluator = new Evaluator(that.program, that.reporter);
+            var evaluator = new ProgramEvaluator(that.program, that.reporter);
             evaluator.run();
         });
 

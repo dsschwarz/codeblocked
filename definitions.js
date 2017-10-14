@@ -53,8 +53,8 @@ class Type {
 }
 
 class Block {
-    constructor(blueprint_id, x, y) {
-        this.blueprint_id = blueprint_id;
+    constructor(blueprint, x, y) {
+        this.blueprint = blueprint;
         this.x = x;
         this.y = y;
         this.width = DEFAULT_WIDTH;
@@ -71,7 +71,7 @@ class Block {
      */
     static create(x, y) {
         var blueprint = program.createEmptyBlueprint();
-        return new Block(blueprint.id, x, y);
+        return new Block(blueprint, x, y);
     }
 
     /**
@@ -113,7 +113,7 @@ class Block {
      * @returns {{x: Number, y: Number}}
      */
     getInputPosition(index) {
-        var blueprint = this._getBlueprint();
+        var blueprint = this.getBlueprint();
         var dx = blueprint.inputs.length == 0 ?
             0 :
             (index + 1)/(blueprint.inputs.length + 1) * this.width;
@@ -130,28 +130,31 @@ class Block {
     }
 
     addInput(input) {
-        var blueprint = this._getBlueprint();
+        var blueprint = this.getBlueprint();
         blueprint.inputs.push(input);
     }
 
+    /**
+     * @returns {Array<Input>}
+     */
     getInputs() {
-        return this._getBlueprint().inputs;
+        return this.getBlueprint().inputs;
     }
 
     getOutput() {
-        return this._getBlueprint().output;
+        return this.getBlueprint().output;
     }
 
     getContents() {
-        return this._getBlueprint().contents;
+        return this.getBlueprint().contents;
     }
 
     setContents(newValue) {
-        return this._getBlueprint().contents = newValue;
+        return this.getBlueprint().contents = newValue;
     }
 
-    _getBlueprint() {
-        return program.findBlueprint(this.blueprint_id);
+    getBlueprint() {
+        return this.blueprint;
     }
 }
 
@@ -212,17 +215,12 @@ class Module {
         });
     }
 
-    getConnectionFromId(fromBlockId) {
-        return _.findWhere(this.connections, {
-            fromBlockId: fromBlockId
-        });
-    }
-
-    getConnectionToId(toBlockId, inputIndex) {
-        return _.findWhere(this.connections, {
-            toBlockId: toBlockId,
-            inputIndex: inputIndex
-        });
+    /**
+     * @param fromBlockId {string}
+     * @returns {Array.<Connection>}
+     */
+    getConnectionsFromId(fromBlockId) {
+        return this.connections.filter(function (connection) {return connection.fromBlockId === fromBlockId});
     }
 
     createConnection(fromBlock, toBlock, inputIndex) {
