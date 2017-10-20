@@ -6,30 +6,30 @@ $(function () {
     console.log("Testing render");
     var block1 = Block.create(10, 10);
     block1.setContents("2");
-    block1.name = "Literal";
+    block1.setName("Literal");
 
     var block3 = Block.create(200, 10);
     block3.setContents("prompt('Enter a number')");
-    block3.name = "Input";
+    block3.setName("Input");
 
     var block2 = Block.create(160, 170);
-    block2.name = "Multiply";
+    block2.setName("Multiply");
     block2.setContents("this.a*this.b");
     block2.addInput(new Input("a"));
     block2.addInput(new Input("b"));
 
     var block4 = Block.create(160, 300);
-    block4.name = "Output";
+    block4.setName("Output");
     block4.setContents("log('Multiplied: ' + this.value)");
     block4.addInput(new Input("value"));
 
     var block5 = Block.create(300, 170);
-    block5.name = "Square";
+    block5.setName("Square");
     block5.setContents("this.a*this.a");
     block5.addInput(new Input("a"));
 
     var block6 = Block.create(300, 300);
-    block6.name = "Output";
+    block6.setName("Output");
     block6.setContents("log('Squared: ' + this.value)");
     block6.addInput(new Input("value"));
 

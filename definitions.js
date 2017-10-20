@@ -60,7 +60,6 @@ class Block {
         this.width = DEFAULT_WIDTH;
         this.height = DEFAULT_HEIGHT;
         this.id = nextId();
-        this.name = "block" + this.id; //default
         this.module = null; // the module that holds this block, it's a two way reference
     }
 
@@ -72,6 +71,10 @@ class Block {
     static create(x, y) {
         var blueprint = program.createEmptyBlueprint();
         return new Block(blueprint, x, y);
+    }
+
+    get name() {
+        return this.blueprint.name;
     }
 
     /**
@@ -87,11 +90,11 @@ class Block {
     }
 
     /**
-     * Change the name of this block
+     * Change the name of this block's blueprint
      * @param newName
      */
     setName(newName) {
-        this.name = newName;
+        this.blueprint.name = newName;
     }
 
     /**
