@@ -20,7 +20,7 @@ class BlockBlueprint {
         this.output = Type.untyped();
 
         // contents is either javascript text, or a Module
-        this.contents = "";
+        this.contents = new StringContents();
     }
 
     /**
@@ -29,6 +29,30 @@ class BlockBlueprint {
     static create() {
         var name = "Unnamed"; // todo get unique name
         return new BlockBlueprint(name);
+    }
+}
+
+class StringContents {
+    constructor() {
+        this.value = "";
+    }
+
+    isStringContents() {
+        return true;
+    }
+}
+
+class ModuleContents {
+    constructor(module) {
+        this.module = module;
+    }
+
+    isStringContents() {
+        return false;
+    }
+
+    static create() {
+        return new ModuleContents(new Module());
     }
 }
 
@@ -153,7 +177,20 @@ class Block {
     }
 
     setContents(newValue) {
-        return this.getBlueprint().contents = newValue;
+        var contents = this.getContents();
+        if (contents.isStringContents()) {
+            contents.value = newValue;
+        } else {
+            throw "Cannot set string value for blueprint contents"
+        }
+    }
+
+    setContentsTypeString(isString) {
+        if (isString) {
+            this.getBlueprint().contents = new StringContents();
+        } else {
+            this.getBlueprint().contents = ModuleContents.create();
+        }
     }
 
     getBlueprint() {

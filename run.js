@@ -5,7 +5,7 @@ class ProgramEvaluator {
 
         // implicit assumption: every evaluator in this list is a dependency of the previous evaluator
         // Order is VERY important
-        this.moduleEvaluators = [this._createModuleEvaluator(program.topLevelModule)];
+        this.moduleEvaluators = [this._createModuleEvaluator(program.topLevelModule, [])];
     }
 
     run() {
@@ -19,18 +19,14 @@ class ProgramEvaluator {
             } else {
                 this.moduleEvaluators.push(evaluator);
                 if (result.moduleDependency) {
-                    this.moduleEvaluators.push(this._createModuleEvaluator(result.moduleDependency));
+                    this.moduleEvaluators.push(this._createModuleEvaluator(result.moduleDependency, result.inputs));
                 }
             }
         }
     }
 
-    addModule(module) {
-        this.moduleEvaluators.push(this._createModuleEvaluator(module));
-    }
-
-    _createModuleEvaluator(module) {
-        return new ModuleEvaluator(module, this.reporter)
+    _createModuleEvaluator(module, inputs) {
+        return new ModuleEvaluator(module, inputs, this.reporter)
     }
 }
 
@@ -50,9 +46,10 @@ class ModuleEvaluatorResultIncomplete {
     }
 }
 class ModuleEvaluatorResultHasDependency {
-    constructor(moduleDependency) {
+    constructor(moduleDependency, inputs) {
         if (moduleDependency == undefined) {throw "Module dependency undefined"}
         this.moduleDependency = moduleDependency;
+        this.inputs = inputs;
     }
 
     completed() {
@@ -69,18 +66,22 @@ function _partitionPendingAndReadyBlocks(evaluationBlocks) {
 class ModuleEvaluator {
     /**
      * @param module {Module}
+     * @param inputs {Array<EvaluationInput>}
      * @param reporter {Reporter}
      */
-    constructor(module, reporter) {
+    constructor(module, inputs, reporter) {
         this.module = module;
+        this.inputs = inputs;
         this.reporter = reporter;
 
+        // TODO only add blocks that are dependencies of the output block
         var evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
         var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(evaluationBlocks);
 
         this.pendingBlocks = pendingAndReadyBlocks[0];
         this.readyBlocks = pendingAndReadyBlocks[1];
 
+        // latest result is set externally. It is the result of evaluating the current dependency
         this._latestResult = undefined;
         this._hasLatestResult = false;
     }
@@ -94,7 +95,7 @@ class ModuleEvaluator {
             throw "Ready block is not ready"
         }
 
-        if (typeof currentBlock.block.getContents() == "string") {
+        if (currentBlock.block.getContents().isStringContents()) {
             var result = this.evaluateBlock(currentBlock);
             return this.broadcastResult(result, currentBlock.block);
         } else {
@@ -103,8 +104,8 @@ class ModuleEvaluator {
                 return this.broadcastResult(this._latestResult, currentBlock.block);
             } else {
                 this.readyBlocks.push(currentBlock);
-                var module = currentBlock.block.getContents(); // TODO get the module
-                return ModuleEvaluatorResultHasDependency(module);
+                var module = currentBlock.block.getContents().module;
+                return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs);
             }
         }
     }
@@ -131,6 +132,7 @@ class ModuleEvaluator {
         this.readyBlocks.push.apply(this.readyBlocks, pendingAndReadyBlocks[1]);
 
         if (this.pendingBlocks.length == 0 && this.readyBlocks.length == 0) {
+            // TODO add an explicit output block for every module
             return new ModuleEvaluatorResultCompleted(result);
         } else {
             if (this.readyBlocks.length == 0) {
@@ -158,7 +160,7 @@ class ModuleEvaluator {
             scope[evaluationInput.name] = evaluationInput.value;
         });
 
-        return _execute.call(scope, evaluationBlock.block.getContents(), this.reporter);
+        return _execute.call(scope, evaluationBlock.block.getContents().value, this.reporter);
     }
 }
 

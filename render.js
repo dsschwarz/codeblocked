@@ -6,9 +6,15 @@ var Modes = {
 
 
 class Renderer {
+    /**
+     * @param program {Program}
+     */
     constructor(program) {
         var that = this;
         this.program = program;
+        this.currentModule = undefined;
+        this.modulePath = [];
+        this.setCurrentModule(program.topLevelModule, "Root");
         this.mode = Modes.None;
         this.lastMousePosition = {x: 0, y: 0};
         this.container = d3.select("svg");
@@ -35,9 +41,11 @@ class Renderer {
 
 
         this.sidePanel = createSidePanelVM(this);
+        this.modulePathViewModel = createModulePathVM(this);
         this.currentlySelectedBlockId = null;
 
         ko.applyBindings(this.sidePanel, $(".side-panel")[0]);
+        ko.applyBindings(this.modulePathViewModel, $(".module-path")[0])
     }
 
     setMode(mode) {
@@ -55,9 +63,20 @@ class Renderer {
         this.render();
     }
 
-    // render relies on the globally available program
+    setCurrentModule(module, name) {
+        this.currentModule = module;
+        this.modulePath.push({
+            module: this.currentModule,
+            name: name
+        });
+
+        if (this.modulePathViewModel) {
+            this.modulePathViewModel.update();
+        }
+    }
+
     render() {
-        this.renderModule(this.program.topLevelModule, this.container);
+        this.renderModule(this.currentModule, this.container);
 
         this.renderModeSpecific();
 
@@ -85,12 +104,9 @@ class Renderer {
         } else {
             // hide ghost line
         }
-
-
     }
 
     /**
-     *
      * @param module {Module}
      * @param parent
      */
@@ -112,12 +128,15 @@ class Renderer {
             .append("path")
             .classed("connection", true);
 
+        connections.exit()
+            .remove();
+
         connections.merge(newConnections)
             .attr("d", d => this.getConnectionLineData(module, d));
 
     }
 
-    renderModuleContainer(parentElement, module) {
+    renderModuleContainer(parentElement) {
         var renderer = this;
 
         var moduleElement = parentElement.selectAll(".moduleElement")
@@ -136,7 +155,7 @@ class Renderer {
                     var block = new GhostBlock(d3.event.offsetX, d3.event.offsetY);
                     // TODO confirm offset is correct for nested modules
                     var newBlock = Block.create(block.x, block.y);
-                    module.addBlock(newBlock);
+                    renderer.currentModule.addBlock(newBlock);
                     renderer.updateCurrentlySelectedBlock(newBlock);
                     renderer.render();
                 }

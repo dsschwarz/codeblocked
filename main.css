@@ -53,7 +53,6 @@ body {
 
 .action-bar {
     flex-grow: 0;
-    padding-bottom: 20px;
 }
 
 .action-bar button {
@@ -93,6 +92,15 @@ svg.mode-connection .io-area:hover {
 
 svg.mode-connection .io-area:hover .io-line {
     stroke-width: 2px;
+}
+
+/* Module path */
+.module-path {
+    margin: 10px;
+}
+.module-link {
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 /*side panel*/

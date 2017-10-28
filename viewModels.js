@@ -1,12 +1,14 @@
 createSidePanelVM = function (renderer) {
     var viewModel = {};
     var subscriptions = [];
+    var contentsSubscriptions = [];
     var selectedBlock = ko.observable();
 
     viewModel.blockName = ko.observable(""); // String
     viewModel.inputs = ko.observableArray(); // Array of observable objects
     viewModel.output = ko.observable(null); // Type
-    viewModel.contents = ko.observable(""); // Type
+    viewModel.contents = ko.observable(); // Contents View Model
+
     viewModel.showBlockInfo = ko.observable(false);
     viewModel.messages = ko.observableArray([]);
 
@@ -26,11 +28,17 @@ createSidePanelVM = function (renderer) {
         viewModel.showBlockInfo(_shouldShowBlockInfo());
     };
 
+    function cleanContentsSubscriptions() {
+        contentsSubscriptions.forEach((sub) => sub.dispose());
+        contentsSubscriptions = [];
+    }
+
     function updateSidePanel() {
         var block = selectedBlock();
         // unsub all
         subscriptions.forEach((sub) => sub.dispose());
         subscriptions = [];
+        cleanContentsSubscriptions();
 
         viewModel.blockName(block.name);
         subscriptions.push(viewModel.blockName.subscribe((newValue) => {
@@ -54,10 +62,37 @@ createSidePanelVM = function (renderer) {
             block.setOutputType(newValue);
         }));
 
-        viewModel.contents(block.getContents());
-        subscriptions.push(viewModel.contents.subscribe((newValue) => {
-            block.setContents(newValue);
-        }));
+        function updateContents() {
+            cleanContentsSubscriptions();
+            var contents = block.getContents();
+            var contentsVM;
+            if (contents.isStringContents()) {
+                contentsVM = {
+                    value: ko.observable(contents.value),
+                    isStringContents: true,
+                    toggleContentsType: function () {
+                        block.setContentsTypeString(false);
+                        updateContents();
+                    }
+                };
+                contentsSubscriptions.push(contentsVM.value.subscribe((newValue) => contents.value = newValue));
+            } else {
+                contentsVM = {
+                    goToModule: function () {
+                        renderer.setCurrentModule(contents.module, block.name);
+                        renderer.render();
+                    },
+                    isStringContents: false,
+                    toggleContentsType: function () {
+                        block.setContentsTypeString(true);
+                        updateContents();
+                    }
+                }
+            }
+            viewModel.contents(contentsVM);
+        }
+
+        updateContents();
     }
 
     viewModel.addInput = function () {
@@ -78,3 +113,36 @@ createSidePanelVM = function (renderer) {
 
     return viewModel;
 };
+
+
+function createModulePathVM(renderer) {
+    var vm = {};
+
+    function getPathViewModels() {
+        return renderer.modulePath
+            .slice(0, renderer.modulePath.length - 1)
+            .map(function (modulePathInfo, index) {
+                return {
+                    name: modulePathInfo.name,
+                    click: function () {
+                        renderer.modulePath.splice(index + 1);
+                        renderer.currentModule = modulePathInfo.module;
+                        vm.update();
+                        renderer.render();
+                    }
+                }
+            })
+    }
+
+    function getCurrent() {
+        return renderer.modulePath[renderer.modulePath.length - 1];
+    }
+
+    vm.path = ko.observableArray(getPathViewModels());
+    vm.current = ko.observable(getCurrent().name);
+    vm.update = function () {
+        vm.path(getPathViewModels());
+        vm.current(getCurrent().name);
+    };
+    return vm;
+}

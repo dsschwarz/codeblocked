@@ -22,6 +22,14 @@
         <button id="connection-btn">Connect</button>
         <button id="run-btn">Run!</button>
     </div>
+    <div class="module-path">
+        <span data-bind="foreach: path">
+            <span class="module-link" data-bind="text: name, click: click"></span>
+            <span>></span>
+        </span>
+        <span data-bind="text: current">
+        </span>
+    </div>
     <div class="flex-grow layout-horizontal">
         <svg class="flex-grow">
 
@@ -48,7 +56,17 @@
                     </div>
                     <div class="blueprint-contents">
                         <h3 class="subsection-title">Contents</h3>
-                        <textarea data-bind="value: contents"></textarea>
+                        <!-- ko if: contents -->
+                        <!-- ko with: contents -->
+                            <button data-bind="click: toggleContentsType">Toggle Contents Type</button>
+                            <!-- ko if: isStringContents-->
+                                <textarea data-bind="value: value"></textarea>
+                            <!-- /ko -->
+                            <!-- ko if: !isStringContents-->
+                                <button data-bind="click: goToModule">View Module</button>
+                            <!-- /ko -->
+                        <!-- /ko -->
+                        <!-- /ko -->
                     </div>
                 </div>
             </div>
