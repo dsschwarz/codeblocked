@@ -39,8 +39,13 @@
         <div class="side-panel layout-vertical">
             <!-- ko if: showBlockInfo -->
             <div class="current-block-info-area">
-                <select data-bind="options: blueprintNames, value: blockName"></select>
-                <input data-bind="value: blockName" class="block-name">
+                <!-- ko if: isEditingName() -->
+                <input data-bind="textInput: blockName" class="block-name">
+                <!-- /ko -->
+                <!-- ko if: !isEditingName()-->
+                <select data-bind="options: blueprints, optionsText: 'name', value: linkedBlueprint"></select>
+                <!-- /ko -->
+                <button data-bind="click: toggleEditingName, text: isEditingName() ? 'Done' : 'Rename'"></button>
                 <div class="blueprint">
                     <div class="inputs-container">
                         <h3 class="subsection-title">Inputs</h3 >

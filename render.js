@@ -37,7 +37,7 @@ class Renderer {
         ko.applyBindings(this.modulePathViewModel, $(".module-path")[0]);
 
         this.state.listenMany(
-            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode],
+            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Blueprints],
             function () { that.render(); }
         );
     }
@@ -209,6 +209,8 @@ class Renderer {
                     d3.event.stopPropagation();
                 }
             });
+
+        inputAreas.exit().remove();
 
         newInputAreas.append("rect")
             .classed("input-click-area click-area", true);

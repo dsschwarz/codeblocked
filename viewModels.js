@@ -1,14 +1,25 @@
 createSidePanelVM = function (state) {
     var viewModel = {};
     var subscriptions = [];
-    var selectedBlock = ko.observable();
+    var onChangeObservable = ko.observable();
 
+    viewModel.isEditingName = ko.observable(false);
+    viewModel.toggleEditingName = function () {
+        viewModel.isEditingName(!viewModel.isEditingName());
+    };
     viewModel.blockName = ko.observable(""); // String
-    viewModel.blueprintNames = state.program.blueprints.map(function (blueprint) {
-        return blueprint.name;
+    viewModel.blueprints = ko.computed(function () {
+        onChangeObservable();
+        return state.program.blueprints.map(function (blueprint) {
+            return {
+                name: blueprint.name,
+                id: blueprint.id
+            };
+        })
     });
+    viewModel.linkedBlueprint = ko.observable(undefined);
     viewModel.inputs = ko.computed(function () {
-        selectedBlock();
+        onChangeObservable();
         if (state.selectedBlock) {
             return state.selectedBlock.getInputs().map(function (input) {
                 return {
@@ -24,7 +35,7 @@ createSidePanelVM = function (state) {
     // subscriptions.push(viewModel.contents().value.subscribe((newValue) => selectedBlock().getContents().value = newValue));
 
     viewModel.showBlockInfo = ko.computed(function () {
-        selectedBlock();
+        onChangeObservable();
         return !!state.selectedBlock;
     });
     viewModel.messages = ko.observableArray([]);
@@ -41,10 +52,29 @@ createSidePanelVM = function (state) {
         subscriptions = [];
     }
 
+    function update() {
+        var block = state.selectedBlock;
+        // update the fields that can't be computed
+        viewModel.blockName(block ? block.name : "");
+        viewModel.linkedBlueprint((function () {
+            if (block) {
+                return viewModel.blueprints().find(function (blueprintVM) {
+                    return blueprintVM.id == block.blueprint.id
+                });
+            } else {
+                return undefined;
+            }
+        })())
+    }
+
     function subscribe() {
         subscriptions.push(viewModel.blockName.subscribe((newValue) => {
             state.selectedBlock.setName(newValue);
             state.trigger(ChangeTopics.Blueprints);
+        }));
+        subscriptions.push(viewModel.linkedBlueprint.subscribe((newLinkedBlueprint) => {
+            state.selectedBlock.blueprint = state.program.findBlueprint(newLinkedBlueprint.id);
+            state.trigger(ChangeTopics.Blocks);
         }));
 
         // viewModel.inputs().forEach(function (inputObservable) {
@@ -53,10 +83,15 @@ createSidePanelVM = function (state) {
         // })
     }
 
-    state.listenMany([ChangeTopics.SelectedBlock, ChangeTopics.Blueprints], function () {
+    state.listenMany([ChangeTopics.SelectedBlock, ChangeTopics.Blueprints, ChangeTopics.Blocks], function () {
         unsubscribe();
-        selectedBlock.valueHasMutated();
+        onChangeObservable.valueHasMutated();
+        update();
         subscribe();
+    });
+
+    state.listen(ChangeTopics.SelectedBlock, function () {
+        viewModel.isEditingName(false);
     });
 
     viewModel.addInput = function () {
