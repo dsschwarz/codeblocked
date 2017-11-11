@@ -1,25 +1,15 @@
-var Modes = {
-    Placement: "placement",
-    Connection: "connection",
-    None: "none"
-};
-
-
 class Renderer {
     /**
      * @param program {Program}
      */
-    constructor(program) {
+    constructor(state) {
         var that = this;
-        this.program = program;
-        this.currentModule = undefined;
-        this.modulePath = [];
-        this.setCurrentModule(program.topLevelModule, "Root");
-        this.mode = Modes.None;
+        /**
+         * @type {State}
+         */
+        this.state = state;
         this.lastMousePosition = {x: 0, y: 0};
         this.container = d3.select("svg");
-        this.connectionHandler = new ConnectionHandler();
-        this.reporter = new Reporter();
         this.container.on("mousemove", function () {
             that.lastMousePosition.x = d3.event.offsetX;
             that.lastMousePosition.y = d3.event.offsetY;
@@ -35,48 +25,39 @@ class Renderer {
         });
 
         $("#run-btn").on("click", function () {
-            var evaluator = new ProgramEvaluator(that.program, that.reporter);
+            var evaluator = new ProgramEvaluator(that.state.program, that.state.reporter);
             evaluator.run();
         });
 
 
-        this.sidePanel = createSidePanelVM(this);
-        this.modulePathViewModel = createModulePathVM(this);
-        this.currentlySelectedBlockId = null;
+        this.sidePanel = createSidePanelVM(state);
+        this.modulePathViewModel = createModulePathVM(state);
 
         ko.applyBindings(this.sidePanel, $(".side-panel")[0]);
-        ko.applyBindings(this.modulePathViewModel, $(".module-path")[0])
+        ko.applyBindings(this.modulePathViewModel, $(".module-path")[0]);
+
+        this.state.listenMany(
+            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode],
+            function () { that.render(); }
+        );
     }
 
     setMode(mode) {
-        if (mode == this.mode) {
+        if (mode == this.state.mode) {
             mode = Modes.None;
         } else if (mode == Modes.Connection) {
-            this.connectionHandler.reset();
+            this.state.connectionHandler.reset();
         }
 
         $("#" + this.mode + "-btn").removeClass("selected");
         this.container.classed("mode-" + this.mode, false);
-        this.mode = mode;
-        this.container.classed("mode-" + this.mode, true);
+        this.container.classed("mode-" + mode, true);
         $("#" + mode + "-btn").addClass("selected");
-        this.render();
-    }
-
-    setCurrentModule(module, name) {
-        this.currentModule = module;
-        this.modulePath.push({
-            module: this.currentModule,
-            name: name
-        });
-
-        if (this.modulePathViewModel) {
-            this.modulePathViewModel.update();
-        }
+        this.state.setMode(mode);
     }
 
     render() {
-        this.renderModule(this.currentModule, this.container);
+        this.renderModule(this.state.currentModule(), this.container);
 
         this.renderModeSpecific();
 
@@ -84,13 +65,11 @@ class Renderer {
 
     // update the side panel with the info for a given block
     updateCurrentlySelectedBlock(newBlock) {
-        this.currentlySelectedBlockId = newBlock.id;
-        this.sidePanel.setSelectedBlock(newBlock);
-        this.render();
+        this.state.selectBlock(newBlock);
     }
 
     renderModeSpecific() {
-        if (this.mode == Modes.Placement) {
+        if (this.state.mode == Modes.Placement) {
             this.renderBasicBlock(
                 this.container.selectAll(".ghostBlock")
                     .data([new GhostBlock(this.lastMousePosition.x, this.lastMousePosition.y)])
@@ -99,7 +78,7 @@ class Renderer {
             this.container.selectAll(".ghostBlock").remove();
         }
 
-        if (this.mode == Modes.Connection) {
+        if (this.state.mode == Modes.Connection) {
             // show ghost line if input or output is already specified
         } else {
             // hide ghost line
@@ -151,13 +130,13 @@ class Renderer {
 
         newElem
             .on("click", function () {
-                if (renderer.mode == Modes.Placement) {
+                if (renderer.state.mode == Modes.Placement) {
                     var block = new GhostBlock(d3.event.offsetX, d3.event.offsetY);
                     // TODO confirm offset is correct for nested modules
                     var newBlock = Block.create(block.x, block.y);
-                    renderer.currentModule.addBlock(newBlock);
-                    renderer.updateCurrentlySelectedBlock(newBlock);
-                    renderer.render();
+                    renderer.state.currentModule().addBlock(newBlock);
+                    renderer.state.selectBlock(newBlock);
+                    renderer.state.trigger(ChangeTopics.Blocks);
                 }
             });
 
@@ -176,8 +155,8 @@ class Renderer {
             .classed("output-area", true)
             .classed("io-area", true)
             .on("click", function (block) {
-                if (renderer.mode == Modes.Connection) {
-                    renderer.connectionHandler.connectToOutput(block);
+                if (renderer.state.mode == Modes.Connection) {
+                    renderer.state.connectionHandler.connectToOutput(block);
                 }
             });
         outputArea.append("rect")
@@ -225,8 +204,8 @@ class Renderer {
             .classed("input-area", true)
             .classed("io-area", true)
             .on("click", function (inputData) {
-                if (renderer.mode == Modes.Connection) {
-                    renderer.connectionHandler.connectToInput(inputData.block, inputData.index);
+                if (renderer.state.mode == Modes.Connection) {
+                    renderer.state.connectionHandler.connectToInput(inputData.block, inputData.index);
                     d3.event.stopPropagation();
                 }
             });
@@ -273,7 +252,7 @@ class Renderer {
             .append("g")
             .classed("code-block", true)
             .on("click", function (data) {
-                renderer.updateCurrentlySelectedBlock(data);
+                renderer.state.selectBlock(data);
             })
             .call(drag);
 
@@ -286,7 +265,7 @@ class Renderer {
             .attr("dominant-baseline", "middle");
 
         var allBlocks = blockElements.merge(newBlocks)
-            .classed("selected", data => data.id == renderer.currentlySelectedBlockId)
+            .classed("selected", data => data.id == renderer.state.selectedBlock)
             .attr("transform", data => _translate(data.x, data.y) );
 
         allBlocks.selectAll(".background")

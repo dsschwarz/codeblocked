@@ -2,7 +2,8 @@
 
 // This class is used when creating connections. It remembers what's been selected so far
 class ConnectionHandler {
-    constructor() {
+    constructor(state) {
+        this.state = state;
         this.selectedOutput = null;
         this.selectedInputBlock = null;
         this.selectedInputIndex = null;
@@ -58,7 +59,7 @@ class ConnectionHandler {
 
                 }
                 this.reset();
-                renderer.render();
+                this.state.trigger(ChangeTopics.Connections)
             }
         }
     }

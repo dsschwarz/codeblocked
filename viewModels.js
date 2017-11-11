@@ -1,148 +1,137 @@
-createSidePanelVM = function (renderer) {
+createSidePanelVM = function (state) {
     var viewModel = {};
     var subscriptions = [];
-    var contentsSubscriptions = [];
     var selectedBlock = ko.observable();
 
     viewModel.blockName = ko.observable(""); // String
-    viewModel.inputs = ko.observableArray(); // Array of observable objects
-    viewModel.output = ko.observable(null); // Type
-    viewModel.contents = ko.observable(); // Contents View Model
+    viewModel.blueprintNames = state.program.blueprints.map(function (blueprint) {
+        return blueprint.name;
+    });
+    viewModel.inputs = ko.computed(function () {
+        selectedBlock();
+        if (state.selectedBlock) {
+            return state.selectedBlock.getInputs().map(function (input) {
+                return {
+                    name:  ko.observable(input.name),
+                    type: ko.observable(input.type) // Type object
+                };
+            })
+        } else {
+            return [];
+        }
+    });
+    viewModel.contents = ko.observable(new ContentsViewModel(state)); // Contents View Model
+    // subscriptions.push(viewModel.contents().value.subscribe((newValue) => selectedBlock().getContents().value = newValue));
 
-    viewModel.showBlockInfo = ko.observable(false);
+    viewModel.showBlockInfo = ko.computed(function () {
+        selectedBlock();
+        return !!state.selectedBlock;
+    });
     viewModel.messages = ko.observableArray([]);
 
-    renderer.reporter.subscribe(function () {
-        viewModel.messages(renderer.reporter.messages);
+    state.reporter.subscribe(function () {
+        viewModel.messages(state.reporter.messages);
 
         var el = $(".messages")[0];
         el.scrollTop = el.scrollHeight;
     });
 
-    viewModel.setSelectedBlock = function (block) {
-        selectedBlock(block);
-        if (block) {
-            updateSidePanel();
-        }
-
-        viewModel.showBlockInfo(_shouldShowBlockInfo());
-    };
-
-    function cleanContentsSubscriptions() {
-        contentsSubscriptions.forEach((sub) => sub.dispose());
-        contentsSubscriptions = [];
-    }
-
-    function updateSidePanel() {
-        var block = selectedBlock();
-        // unsub all
+    function unsubscribe() {
         subscriptions.forEach((sub) => sub.dispose());
         subscriptions = [];
-        cleanContentsSubscriptions();
-
-        viewModel.blockName(block.name);
-        subscriptions.push(viewModel.blockName.subscribe((newValue) => {
-            block.setName(newValue);
-            _updateView();
-        }));
-
-        viewModel.inputs(block.getInputs().map(function (input) {
-            var inputObservable = {
-                name:  ko.observable(input.name),
-                type: ko.observable(input.type) // Type object
-            };
-
-            subscriptions.push(inputObservable.name.subscribe((newValue) => input.name = newValue));
-            subscriptions.push(inputObservable.type.subscribe((newValue) => input.type = newValue));
-
-            return inputObservable;
-        }));
-        viewModel.output(block.getOutput());
-        subscriptions.push(viewModel.output.subscribe((newValue) => {
-            block.setOutputType(newValue);
-        }));
-
-        function updateContents() {
-            cleanContentsSubscriptions();
-            var contents = block.getContents();
-            var contentsVM;
-            if (contents.isStringContents()) {
-                contentsVM = {
-                    value: ko.observable(contents.value),
-                    isStringContents: true,
-                    toggleContentsType: function () {
-                        block.setContentsTypeString(false);
-                        updateContents();
-                    }
-                };
-                contentsSubscriptions.push(contentsVM.value.subscribe((newValue) => contents.value = newValue));
-            } else {
-                contentsVM = {
-                    goToModule: function () {
-                        renderer.setCurrentModule(contents.module, block.name);
-                        renderer.render();
-                    },
-                    isStringContents: false,
-                    toggleContentsType: function () {
-                        block.setContentsTypeString(true);
-                        updateContents();
-                    }
-                }
-            }
-            viewModel.contents(contentsVM);
-        }
-
-        updateContents();
     }
 
+    function subscribe() {
+        subscriptions.push(viewModel.blockName.subscribe((newValue) => {
+            state.selectedBlock.setName(newValue);
+            state.trigger(ChangeTopics.Blueprints);
+        }));
+
+        // viewModel.inputs().forEach(function (inputObservable) {
+        //     subscriptions.push(inputObservable.name.subscribe((newValue) => input.name = newValue));
+        //     subscriptions.push(inputObservable.type.subscribe((newValue) => input.type = newValue));
+        // })
+    }
+
+    state.listenMany([ChangeTopics.SelectedBlock, ChangeTopics.Blueprints], function () {
+        unsubscribe();
+        selectedBlock.valueHasMutated();
+        subscribe();
+    });
+
     viewModel.addInput = function () {
-        selectedBlock().createInput();
-        updateSidePanel();
-        _updateView();
-    };
-
-    var _shouldShowBlockInfo = function () {
-        if (selectedBlock()) {
-            return true;
-        }
-    };
-
-    var _updateView = function () {
-        renderer.render();
+        state.selectedBlock.createInput();
+        state.trigger(ChangeTopics.Blueprints);
     };
 
     return viewModel;
 };
 
-
-function createModulePathVM(renderer) {
+/**
+ * @param state {State}
+ */
+function createModulePathVM(state) {
     var vm = {};
 
     function getPathViewModels() {
-        return renderer.modulePath
-            .slice(0, renderer.modulePath.length - 1)
+        var modulePath = state.modulePath;
+        return modulePath
+            .slice(0, modulePath.length - 1)
             .map(function (modulePathInfo, index) {
                 return {
                     name: modulePathInfo.name,
                     click: function () {
-                        renderer.modulePath.splice(index + 1);
-                        renderer.currentModule = modulePathInfo.module;
-                        vm.update();
-                        renderer.render();
+                        modulePath.splice(index + 1);
+                        state.trigger(ChangeTopics.ModulePath);
                     }
                 }
             })
     }
 
     function getCurrent() {
-        return renderer.modulePath[renderer.modulePath.length - 1];
+        return state.currentModule();
     }
 
     vm.path = ko.observableArray(getPathViewModels());
     vm.current = ko.observable(getCurrent().name);
-    vm.update = function () {
+
+    state.listen(ChangeTopics.ModulePath, function () {
         vm.path(getPathViewModels());
         vm.current(getCurrent().name);
-    };
+    });
     return vm;
+}
+
+class ContentsViewModel {
+    /**
+     * @param state {State}
+     */
+    constructor(state) {
+        var that = this;
+        var selectedBlockObservable = ko.observable();
+        this.isStringContents = ko.computed(function () {
+            selectedBlockObservable();
+            var block = state.selectedBlock;
+            return block && block.getContents().isStringContents();
+        });
+
+        this.value = ko.computed(function () {
+            if (that.isStringContents()) {
+                return state.selectedBlock.getContents().value;
+            }
+        });
+        this.goToModule = function () {
+            var block = state.selectedBlock;
+            state.addModule({module: block.getContents().module, name: block.name});
+        };
+        this.toggleContentsType = function () {
+            var block = state.selectedBlock;
+            block.setContentsTypeString(!that.isStringContents());
+            state.trigger(ChangeTopics.Blueprints);
+        };
+
+        state.listenMany([ChangeTopics.SelectedBlock, ChangeTopics.Blueprints], function () {
+            selectedBlockObservable.valueHasMutated();
+        })
+    }
 }

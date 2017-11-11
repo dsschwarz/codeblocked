@@ -93,7 +93,7 @@ class Block {
      * @returns {Block}
      */
     static create(x, y) {
-        var blueprint = program.createEmptyBlueprint();
+        var blueprint = window.globalProgram.createEmptyBlueprint();
         return new Block(blueprint, x, y);
     }
 
@@ -110,7 +110,7 @@ class Block {
     }
 
     getModule() {
-        return this.module || this.setModule(program.topLevelModule.findModuleForBlockId(this.id));
+        return this.module || this.setModule(window.globalProgram.topLevelModule.findModuleForBlockId(this.id));
     }
 
     /**
@@ -285,6 +285,9 @@ class Module {
 class Program {
     constructor() {
         this.topLevelModule = new Module();
+        /**
+         * @type {Array<BlockBlueprint>}
+         */
         this.blueprints = [];
         this.types = [];
     }

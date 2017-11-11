@@ -7,10 +7,12 @@
     <script src="jquery-3.1.1.js" type="text/javascript"></script>
     <script src="knockout-3.3.0.debug.js" type="text/javascript"></script>
     <script src="underscore.js" type="text/javascript"></script>
+    <script src="enums.js" type="text/javascript"></script>
     <script src="definitions.js" type="text/javascript"></script>
     <script src="renderClasses.js" type="text/javascript"></script>
     <script src="render.js" type="text/javascript"></script>
     <script src="run.js" type="text/javascript"></script>
+    <script src="state.js" type="text/javascript"></script>
     <script src="start.js" type="text/javascript"></script>
     <script src="viewModels.js" type="text/javascript"></script>
 
@@ -37,6 +39,7 @@
         <div class="side-panel layout-vertical">
             <!-- ko if: showBlockInfo -->
             <div class="current-block-info-area">
+                <select data-bind="options: blueprintNames, value: blockName"></select>
                 <input data-bind="value: blockName" class="block-name">
                 <div class="blueprint">
                     <div class="inputs-container">
@@ -50,19 +53,15 @@
                         <!-- /ko -->
                         <button data-bind="click: addInput">Add Input</button>
                     </div>
-                    <div class="output">
-                        <h3 class="subsection-title">Output Type</h3 >
-                        <span class="output-type" data-bind="text: output().name"></span>
-                    </div>
                     <div class="blueprint-contents">
                         <h3 class="subsection-title">Contents</h3>
                         <!-- ko if: contents -->
                         <!-- ko with: contents -->
                             <button data-bind="click: toggleContentsType">Toggle Contents Type</button>
-                            <!-- ko if: isStringContents-->
+                            <!-- ko if: isStringContents() -->
                                 <textarea data-bind="value: value"></textarea>
                             <!-- /ko -->
-                            <!-- ko if: !isStringContents-->
+                            <!-- ko if: !isStringContents()-->
                                 <button data-bind="click: goToModule">View Module</button>
                             <!-- /ko -->
                         <!-- /ko -->

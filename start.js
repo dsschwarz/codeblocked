@@ -1,7 +1,7 @@
-var program = new Program();
-var renderer;
 $(function () {
     console.log("Starting app");
+    var state  = new State();
+    window.globalProgram = state.program;
 
     console.log("Testing render");
     var block1 = Block.create(10, 10);
@@ -33,6 +33,7 @@ $(function () {
     block6.setContents("log('Squared: ' + this.value)");
     block6.addInput(new Input("value"));
 
+    var program = state.program;
     program.topLevelModule.addBlock(block1);
     program.topLevelModule.addBlock(block2);
     program.topLevelModule.addBlock(block3);
@@ -46,21 +47,7 @@ $(function () {
     program.topLevelModule.connections.push(new Connection(block3.id, block5.id, 0));
     program.topLevelModule.connections.push(new Connection(block5.id, block6.id, 0));
 
-    renderer = new Renderer(program);
+    var renderer = new Renderer(state);
     renderer.render();
-
-    renderer.reporter.log("Select a block to view and edit its details");
-    setTimeout(() => {
-        renderer.reporter.log("Click the run button to run the program");
-        setTimeout(() => {
-            renderer.reporter.log("Use the place button to add new blocks. Click place again to end place mode");
-            setTimeout(() => {
-                renderer.reporter.log("Use the connect button to connect an output to an input");
-                setTimeout(() => {
-                    renderer.reporter.log("Blocks can be dragged around");
-                }, 2000);
-            }, 2000);
-        }, 2000);
-    }, 2000);
 
 });
