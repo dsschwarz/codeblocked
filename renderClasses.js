@@ -46,21 +46,15 @@ class ConnectionHandler {
 
         // check if both output and input are selected
         if (this.selectedInputBlock && this.selectedOutput && this.selectedInputIndex != null) {
-            if (this.selectedInputBlock.getModule() != this.selectedOutput.getModule()) {
-                console.error("Input and output belong to different modules");
+            var module = this.state.currentModule();
+            if (module.getConnection(this.selectedOutput, this.selectedInputBlock, this.selectedInputIndex)) {
+                console.warn("Connection already exists");
             } else {
-                var module = this.selectedOutput.getModule();
-                if (module.getConnection(this.selectedOutput, this.selectedInputBlock, this.selectedInputIndex)) {
-                    console.warn("Connection already exists");
-                } else {
-                    // we're good to go
-                    module
-                        .createConnection(this.selectedOutput, this.selectedInputBlock, this.selectedInputIndex);
+                module.createConnection(this.selectedOutput, this.selectedInputBlock, this.selectedInputIndex);
 
-                }
-                this.reset();
-                this.state.trigger(ChangeTopics.Connections)
             }
+            this.reset();
+            this.state.trigger(ChangeTopics.Connections)
         }
     }
 }

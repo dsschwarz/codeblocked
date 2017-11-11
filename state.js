@@ -8,7 +8,7 @@ class State {
          */
         this.selectedBlock = null;
         this.mode = Modes.None;
-        this.connectionHandler = new ConnectionHandler();
+        this.connectionHandler = new ConnectionHandler(this);
         this.reporter = new Reporter();
 
         this._listeners = {};

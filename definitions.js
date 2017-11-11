@@ -109,10 +109,6 @@ class Block {
         return this.module = module;
     }
 
-    getModule() {
-        return this.module || this.setModule(window.globalProgram.topLevelModule.findModuleForBlockId(this.id));
-    }
-
     /**
      * Change the name of this block's blueprint
      * @param newName
@@ -236,15 +232,6 @@ class Module {
     addBlock(block) {
         block.setModule(this);
         this.blocks.push(block);
-    }
-
-    findModuleForBlockId(blockId) {
-        if (this.findBlock(blockId)) {
-            return this;
-        } else {
-            throw Error("Not implemented");
-            // search through child modules
-        }
     }
 
     getConnection(fromBlock, toBlock, inputIndex) {
