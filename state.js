@@ -15,7 +15,11 @@ class State {
     }
 
     currentModule() {
-        return this.modulePath[this.modulePath.length - 1].module;
+        return this.currentModuleInfo().module;
+    }
+
+    currentModuleInfo() {
+        return this.modulePath[this.modulePath.length - 1];
     }
 
     selectedBlockId() {
@@ -51,7 +55,7 @@ class State {
     }
 
     popToModule(index) {
-        this.modulePath.slice(0, index);
+        this.modulePath.splice(index + 1);
         this.trigger(ChangeTopics.ModulePath);
     }
 

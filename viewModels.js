@@ -116,23 +116,18 @@ function createModulePathVM(state) {
                 return {
                     name: modulePathInfo.name,
                     click: function () {
-                        modulePath.splice(index + 1);
-                        state.trigger(ChangeTopics.ModulePath);
+                        state.popToModule(index);
                     }
                 }
             })
     }
 
-    function getCurrent() {
-        return state.currentModule();
-    }
-
     vm.path = ko.observableArray(getPathViewModels());
-    vm.current = ko.observable(getCurrent().name);
+    vm.current = ko.observable(state.currentModuleInfo().name);
 
     state.listen(ChangeTopics.ModulePath, function () {
         vm.path(getPathViewModels());
-        vm.current(getCurrent().name);
+        vm.current(state.currentModuleInfo().name);
     });
     return vm;
 }

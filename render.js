@@ -37,7 +37,7 @@ class Renderer {
         ko.applyBindings(this.modulePathViewModel, $(".module-path")[0]);
 
         this.state.listenMany(
-            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Blueprints],
+            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Blueprints, ChangeTopics.ModulePath],
             function () { that.render(); }
         );
     }
