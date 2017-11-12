@@ -74,6 +74,18 @@ class ModuleEvaluator {
         this.inputs = inputs;
         this.reporter = reporter;
 
+/*
+        // TODO only add blocks that are dependencies of the output block
+        this.evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
+        var initialBlocks = this.getInitialBlocks(this.evaluationBlocks);
+
+        // satisfy all blocks that depend on the input blocks
+
+        // compute initial dependencies in first cycle, for efficiency
+        // partition blocks in dependency tree into ready (no dependencies) and pending (has unevaluated dependencies)
+        this.pendingBlocks = [];
+        this.readyBlocks = [];*/
+
         // TODO only add blocks that are dependencies of the output block
         var evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
         var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(evaluationBlocks);
@@ -110,9 +122,13 @@ class ModuleEvaluator {
         }
     }
 
+    getInitialBlocks(blocks) {
+        // return the output block
+    }
+
     /**
      * @param result {*}
-     * @param fromBlock {Block}
+     * @param fromBlock {BaseBlock}
      * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete}
      */
     broadcastResult(result, fromBlock) {
@@ -161,6 +177,25 @@ class ModuleEvaluator {
         });
 
         return _execute.call(scope, evaluationBlock.block.getContents().value, this.reporter);
+    }
+
+    /**
+     * @param evaluationBlock {EvaluationBlock}
+     */
+    getDependencies(evaluationBlock) {
+        if (evaluationBlock.block.getType() == BlockTypes.Normal) {
+            return evaluationBlock.inputs
+                .filter((input) => !input.satisfied)
+                .map((input)  => this.module.getConnectionToId(evaluationBlock.block.id, input.index))
+                .map((connection) => {
+                    var dependency = this.evaluationBlocks.find((eBlock) => eBlock.block.id == connection.fromBlockId)
+                    if (dependency) {
+                        return dependency
+                    } else {
+                        throw new Error("Dependency not found for block: " + evaluationBlock.block.name + " input index: " + connection.inputIndex);
+                    }
+                });
+        }
     }
 }
 
@@ -211,13 +246,13 @@ class Reporter {
 
 class EvaluationBlock {
     /**
-     * @param block {Block}
+     * @param block {BaseBlock}
      */
     constructor(block) {
         /**
          * @type {Array<EvaluationInput>}
          */
-        this.inputs = block.getInputs().map(function (input) {return new EvaluationInput(input)});
+        this.inputs = block.getInputs().map(function (input, index) {return new EvaluationInput(input, index)});
         this.block = block;
     }
 
@@ -229,11 +264,13 @@ class EvaluationBlock {
 class EvaluationInput {
     /**
      * @param input {Input}
+     * @param index {number}
      */
-    constructor(input) {
+    constructor(input, index) {
         this.name = input.name;
         this.value = undefined;
         this.satisfied = false;
+        this.index = index;
     }
 
     setValue(value) {

@@ -4,7 +4,7 @@ class State {
 
         this.modulePath = [new ModuleInfo(this.program.topLevelModule, "Root")];
         /**
-         * @type {Block}
+         * @type {BaseBlock}
          */
         this.selectedBlock = null;
         this.mode = Modes.None;

@@ -4,33 +4,39 @@ $(function () {
     window.globalProgram = state.program;
 
     console.log("Testing render");
-    var block1 = Block.create(10, 10);
-    block1.setContents("2");
+    var block1 = BlueprintInstance.create(10, 10);
+    block1.blueprint.setContentsTypeString(true);
+    block1.blueprint.setContents("2");
     block1.setName("Literal");
 
-    var block3 = Block.create(200, 10);
-    block3.setContents("prompt('Enter a number')");
+    var block3 = BlueprintInstance.create(200, 10);
+    block3.blueprint.setContentsTypeString(true);
+    block3.blueprint.setContents("prompt('Enter a number')");
     block3.setName("Input");
 
-    var block2 = Block.create(160, 170);
+    var block2 = BlueprintInstance.create(160, 170);
     block2.setName("Multiply");
-    block2.setContents("this.a*this.b");
+    block2.blueprint.setContentsTypeString(true);
+    block2.blueprint.setContents("this.a*this.b");
     block2.addInput(new Input("a"));
     block2.addInput(new Input("b"));
 
-    var block4 = Block.create(160, 300);
+    var block4 = BlueprintInstance.create(160, 300);
     block4.setName("Output");
-    block4.setContents("log('Multiplied: ' + this.value)");
+    block4.blueprint.setContentsTypeString(true);
+    block4.blueprint.setContents("log('Multiplied: ' + this.value)");
     block4.addInput(new Input("value"));
 
-    var block5 = Block.create(300, 170);
+    var block5 = BlueprintInstance.create(300, 170);
     block5.setName("Square");
-    block5.setContents("this.a*this.a");
+    block5.blueprint.setContentsTypeString(true);
+    block5.blueprint.setContents("this.a*this.a");
     block5.addInput(new Input("a"));
 
-    var block6 = Block.create(300, 300);
+    var block6 = BlueprintInstance.create(300, 300);
     block6.setName("Output");
-    block6.setContents("log('Squared: ' + this.value)");
+    block6.blueprint.setContentsTypeString(true);
+    block6.blueprint.setContents("log('Squared: ' + this.value)");
     block6.addInput(new Input("value"));
 
     var program = state.program;

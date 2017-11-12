@@ -72,7 +72,7 @@ class Renderer {
         if (this.state.mode == Modes.Placement) {
             this.renderBasicBlock(
                 this.container.selectAll(".ghostBlock")
-                    .data([new GhostBlock(this.lastMousePosition.x, this.lastMousePosition.y)])
+                    .data([new GhostBlock("", this.lastMousePosition.x, this.lastMousePosition.y)])
             ).allBlocks.classed("ghostBlock", true);
         } else {
             this.container.selectAll(".ghostBlock").remove();
@@ -131,9 +131,9 @@ class Renderer {
         newElem
             .on("click", function () {
                 if (renderer.state.mode == Modes.Placement) {
-                    var block = new GhostBlock(d3.event.offsetX, d3.event.offsetY);
+                    var block = new GhostBlock("", d3.event.offsetX, d3.event.offsetY);
                     // TODO confirm offset is correct for nested modules
-                    var newBlock = Block.create(block.x, block.y);
+                    var newBlock = BlueprintInstance.create(block.x, block.y);
                     renderer.state.currentModule().addBlock(newBlock);
                     renderer.state.selectBlock(newBlock);
                     renderer.state.trigger(ChangeTopics.Blocks);
@@ -168,14 +168,14 @@ class Renderer {
 
         // center the output area, three quarters down and sticking out by a bit
         var outputsToUpdate = result.allBlocks.selectAll(".output-area")
-            .attr("transform", data => "translate(" + data.width/4 + ", " + data.height*0.75 + ")");
+            .attr("transform", data => "translate(" + data.getPosition().width/4 + ", " + data.getPosition().height*0.75 + ")");
 
         outputsToUpdate.selectAll(".output-click-area")
-            .attr("height", data => data.height/3)
-            .attr("width", data => data.width/2);
+            .attr("height", data => data.getPosition().height/3)
+            .attr("width", data => data.getPosition().width/2);
         outputsToUpdate.selectAll(".output-line")
             .attr("d", block => {
-                return "M" + block.width/4 + " " + block.height/4 + " v" + block.getIOLineLength()
+                return "M" + block.getPosition().width/4 + " " + block.getPosition().height/4 + " v" + BlockHelpers.getIOLineLength()
             });
 
 
@@ -186,15 +186,16 @@ class Renderer {
                 var totalInputs = inputs.length;
                 return inputs.map(function (input, index) {
                     var inputData = {};
+                    var position = blockData.getPosition();
                     inputData.block = blockData;
                     inputData.index = index;
-                    inputData.width = 1/(totalInputs+1) * blockData.width;
-                    inputData.height = blockData.height/3; // todo tweak this
-                    var inputPosition = blockData.getInputPosition(index);
+                    inputData.width = 1/(totalInputs+1) * position.width;
+                    inputData.height = position.height/3; // todo tweak this
+                    var inputPosition = BlockHelpers.getInputPosition(blockData, index);
                     // this is a bit strange - getInputPosition includes the absolute block position
                     // Subtract block position to get position relative to the block
-                    inputData.x = inputPosition.x - blockData.x;
-                    inputData.y = inputPosition.y - blockData.y;
+                    inputData.x = inputPosition.x - position.x;
+                    inputData.y = inputPosition.y - position.y;
 
                     return inputData;
                 });
@@ -227,12 +228,12 @@ class Renderer {
 
         inputsToUpdate.select(".input-line")
             .attr("d", inputData => {
-                return "M0 0 v" + inputData.block.getIOLineLength();
+                return "M0 0 v" + BlockHelpers.getIOLineLength();
             });
 
         inputsToUpdate.select(".input-click-area")
             .attr("x", d => -d.width/2)
-            .attr("y", d => -d.block.height/12) // based on 3/4h+1/3h = 13/12h
+            .attr("y", d => -d.block.getPosition().height/12) // based on 3/4h+1/3h = 13/12h
             .attr("width", d => d.width)
             .attr("height", d => d.height);
 
@@ -267,19 +268,19 @@ class Renderer {
             .attr("dominant-baseline", "middle");
 
         var allBlocks = blockElements.merge(newBlocks)
-            .classed("selected", data => data.id == renderer.state.selectedBlock)
-            .attr("transform", data => _translate(data.x, data.y) );
+            .classed("selected", data => data == renderer.state.selectedBlock)
+            .attr("transform", data => _translate(data.getPosition().x, data.getPosition().y) );
 
         allBlocks.selectAll(".background")
             .attr("x", 0)
             .attr("y", 0)
-            .attr("width", data => data.width)
-            .attr("height", data => data.height);
+            .attr("width", data => data.getPosition().width)
+            .attr("height", data => data.getPosition().height);
 
         allBlocks.selectAll(".block-name-label")
-            .attr("x", data => data.width/2)
-            .attr("y", data => data.height/2)
-            .text(data => data.name);
+            .attr("x", data => data.getPosition().width/2)
+            .attr("y", data => data.getPosition().height/2)
+            .text(data => data.getName());
 
         blockElements.exit().remove();
 
@@ -299,8 +300,8 @@ class Renderer {
         var fromBlock = module.findBlock(d.fromBlockId);
         var toBlock = module.findBlock(d.toBlockId);
 
-        var start = fromBlock.getOutputPosition();
-        var end = toBlock.getInputPosition(d.inputIndex);
+        var start = BlockHelpers.getOutputPosition(fromBlock);
+        var end = BlockHelpers.getInputPosition(toBlock, d.inputIndex);
 
         return "M" + start.x + " " + start.y + " L" + end.x + " " + end.y;
     }

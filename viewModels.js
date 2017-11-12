@@ -55,7 +55,7 @@ createSidePanelVM = function (state) {
     function update() {
         var block = state.selectedBlock;
         // update the fields that can't be computed
-        viewModel.blockName(block ? block.name : "");
+        viewModel.blockName(block ? block.getName() : "");
         viewModel.linkedBlueprint((function () {
             if (block) {
                 return viewModel.blueprints().find(function (blueprintVM) {
@@ -73,7 +73,7 @@ createSidePanelVM = function (state) {
             state.trigger(ChangeTopics.Blueprints);
         }));
         subscriptions.push(viewModel.linkedBlueprint.subscribe((newLinkedBlueprint) => {
-            state.selectedBlock.blueprint = state.program.findBlueprint(newLinkedBlueprint.id);
+            state.selectedBlock.setBlueprint(state.program.findBlueprint(newLinkedBlueprint.id));
             state.trigger(ChangeTopics.Blocks);
         }));
 
@@ -146,17 +146,18 @@ class ContentsViewModel {
         });
 
         this.value = ko.computed(function () {
+            selectedBlockObservable();
             if (that.isStringContents()) {
                 return state.selectedBlock.getContents().value;
             }
         });
         this.goToModule = function () {
             var block = state.selectedBlock;
-            state.addModule({module: block.getContents().module, name: block.name});
+            state.addModule({module: block.getContents().module, name: block.getName()});
         };
         this.toggleContentsType = function () {
             var block = state.selectedBlock;
-            block.setContentsTypeString(!that.isStringContents());
+            block.blueprint.setContentsTypeString(!that.isStringContents());
             state.trigger(ChangeTopics.Blueprints);
         };
 
