@@ -1,6 +1,6 @@
 class Renderer {
     /**
-     * @param program {Program}
+     * @param state {State}
      */
     constructor(state) {
         var that = this;
@@ -37,7 +37,7 @@ class Renderer {
         ko.applyBindings(this.modulePathViewModel, $(".module-path")[0]);
 
         this.state.listenMany(
-            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Blueprints, ChangeTopics.ModulePath],
+            [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Modules, ChangeTopics.ModulePath],
             function () { that.render(); }
         );
     }
@@ -61,11 +61,6 @@ class Renderer {
 
         this.renderModeSpecific();
 
-    }
-
-    // update the side panel with the info for a given block
-    updateCurrentlySelectedBlock(newBlock) {
-        this.state.selectBlock(newBlock);
     }
 
     renderModeSpecific() {
@@ -132,10 +127,10 @@ class Renderer {
             .on("click", function () {
                 if (renderer.state.mode == Modes.Placement) {
                     var block = new GhostBlock("", d3.event.offsetX, d3.event.offsetY);
-                    // TODO confirm offset is correct for nested modules
-                    var newBlock = BlueprintInstance.create(block.x, block.y);
+                    var newBlock = ModuleBlock.create(block.getPosition().x, block.getPosition().y);
                     renderer.state.currentModule().addBlock(newBlock);
                     renderer.state.selectBlock(newBlock);
+                    renderer.state.setMode(Modes.None);
                     renderer.state.trigger(ChangeTopics.Blocks);
                 }
             });
@@ -227,9 +222,7 @@ class Renderer {
             });
 
         inputsToUpdate.select(".input-line")
-            .attr("d", inputData => {
-                return "M0 0 v" + BlockHelpers.getIOLineLength();
-            });
+            .attr("d", "M0 0 v" + BlockHelpers.getIOLineLength());
 
         inputsToUpdate.select(".input-click-area")
             .attr("x", d => -d.width/2)
@@ -245,9 +238,8 @@ class Renderer {
         var renderer = this;
         var drag = d3.drag();
         drag.on("drag", function (data) {
-            data.x = d3.event.x;
-            data.y = d3.event.y;
-
+            data.getPosition().x += d3.event.dx;
+            data.getPosition().y += d3.event.dy;
             renderer.render();
         });
 

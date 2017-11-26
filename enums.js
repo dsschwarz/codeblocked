@@ -9,12 +9,15 @@ var ChangeTopics = {
     Blocks: "blocks", // When a block is added, removed, or updated
     SelectedBlock: "selectedBlock", // When the selected block changes
     Connections: "connections", // when connections are added/removed
-    Blueprints: "blueprints", // when a blueprint definition changes
+    Modules: "modules", // when a module definition changes
     ModulePath: "modulePath"
 };
 
 var BlockTypes = {
-    Normal: "normie",
+    Module: "module",
+    JavaScript: "javascript",
+    Input: "input",
+    Output: "output",
     If: "if",
     And: "and",
     Ghost: "ghost", // preview block when placing

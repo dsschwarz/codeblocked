@@ -27,11 +27,15 @@ class Connection {
 }
 
 class Module {
-    constructor() {
+    constructor(name) {
+        this.id = nextId();
+        this.name = name;
         this.connections = [];
         this.blocks = [];
-        // this.inputBlocks = [];
-        // this.outputBlock = new OutputBlock();
+        this.inputs = [];
+        this.output = Type.untyped(); // TODO infer type
+        this.inputBlocks = [];
+        this.outputBlock = new OutputBlock();
     }
 
     /**
@@ -94,32 +98,32 @@ class Module {
 
 class Program {
     constructor() {
-        this.topLevelModule = new Module();
+        this.topLevelModule = new Module("Root");
         /**
-         * @type {Array<BlockBlueprint>}
+         * @type {Array<Module>}
          */
-        this.blueprints = [];
+        this.modules = [];
         this.types = [];
     }
 
     /**
      * @param id {Number}
-     * @returns {BlockBlueprint}
+     * @returns {Module}
      */
     findBlueprint(id) {
-        for (var i=0; i < this.blueprints.length; i++) {
-            if (this.blueprints[i].id === id) {
-                return this.blueprints[i];
+        for (var i=0; i < this.modules.length; i++) {
+            if (this.modules[i].id === id) {
+                return this.modules[i];
             }
         }
     }
 
     /**
-     * @returns {BlockBlueprint}
+     * @returns {Module}
      */
-    createEmptyBlueprint() {
-        var bp = BlockBlueprint.create();
-        this.blueprints.push(bp);
-        return bp;
+    createNewModule() {
+        var module = new Module("Unnamed");
+        this.modules.push(module);
+        return module;
     }
 }

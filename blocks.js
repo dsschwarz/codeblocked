@@ -71,27 +71,27 @@ class BaseBlock {
     }
 }
 
-class BlueprintInstance extends BaseBlock {
+class ModuleBlock extends BaseBlock {
     /**
-     * @param blueprint {BlockBlueprint}
+     * @param module {Module}
      * @param position {BlockPosition}
      */
-    constructor(blueprint, position) {
+    constructor(module, position) {
         super();
         this.id = nextId();
         this.position = position;
-        this.blueprint = blueprint;
+        this.module = module;
     }
 
     /**
      * @param x {Number}
      * @param y {Number}
-     * @returns {BlueprintInstance}
+     * @returns {ModuleBlock}
      */
     static create(x, y) {
-        var blueprint = window.globalProgram.createEmptyBlueprint();
+        var module = window.globalProgram.createNewModule();
         var position = new BlockPosition(x, y);
-        return new BlueprintInstance(blueprint, position);
+        return new ModuleBlock(module, position);
     }
 
     // Shared methods
@@ -101,11 +101,11 @@ class BlueprintInstance extends BaseBlock {
 
     // Shared methods
     getName() {
-        return this.blueprint.name;
+        return this.module.name;
     }
 
     getType() {
-        return BlockTypes.Normal;
+        return BlockTypes.Module;
     }
 
 
@@ -118,24 +118,24 @@ class BlueprintInstance extends BaseBlock {
      * @returns {Array<Input>}
      */
     getInputs() {
-        return this.blueprint.inputs;
+        return this.module.inputs;
     }
 
     getOutput() {
-        return this.blueprint.output;
+        return this.module.output;
     }
 
     // Special methods
     /**
-     * Change the name of this block's blueprint
+     * Change the name of this block's module
      * @param newName
      */
     setName(newName) {
-        this.blueprint.name = newName;
+        this.module.name = newName;
     }
 
-    setBlueprint(blueprint) {
-        this.blueprint = blueprint;
+    setBlueprint(module) {
+        this.module = module;
     }
 
     createInput() {
@@ -145,12 +145,8 @@ class BlueprintInstance extends BaseBlock {
     }
 
     addInput(input) {
-        var blueprint = this.blueprint;
-        blueprint.inputs.push(input);
-    }
-
-    getContents() {
-        return this.blueprint.contents;
+        var module = this.module;
+        module.inputs.push(input);
     }
 }
 
@@ -160,69 +156,6 @@ class BlockPosition {
         this.y = y;
         this.width = DEFAULT_WIDTH;
         this.height = DEFAULT_HEIGHT;
-    }
-}
-
-class BlockBlueprint {
-    constructor(name) {
-        this.id = nextId();
-        this.name = name;
-
-        this.inputs = [];
-
-        this.output = Type.untyped();
-
-        // contents is either javascript text, or a Module
-        this.contents = ModuleContents.create();
-    }
-
-    /**
-     * @returns {BlockBlueprint}
-     */
-    static create() {
-        var name = "Unnamed"; // todo get unique name
-        return new BlockBlueprint(name);
-    }
-
-    setContents(newValue) {
-        var contents = this.contents;
-        if (contents.isStringContents()) {
-            contents.value = newValue;
-        } else {
-            throw "Cannot set string value for blueprint contents"
-        }
-    }
-
-    setContentsTypeString(isString) {
-        if (isString) {
-            this.contents = new StringContents();
-        } else {
-            this.contents = ModuleContents.create();
-        }
-    }
-}
-
-class StringContents {
-    constructor() {
-        this.value = "";
-    }
-
-    isStringContents() {
-        return true;
-    }
-}
-
-class ModuleContents {
-    constructor(module) {
-        this.module = module;
-    }
-
-    isStringContents() {
-        return false;
-    }
-
-    static create() {
-        return new ModuleContents(new Module());
     }
 }
 
@@ -243,6 +176,115 @@ class GhostBlock extends BaseBlock {
 
     getPosition() {
         return this.position;
+    }
+
+    getOutput() {
+        return undefined;
+    }
+}
+
+class JavascriptBlock extends BaseBlock {
+    constructor(name, position, inputs) {
+        super();
+        this.position = position;
+        this.name = name;
+        this.id = nextId();
+        this.inputs = inputs;
+        this.output = Type.untyped();
+        this.script = "";
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    getType() {
+        return BlockTypes.JavaScript;
+    }
+
+    getPosition() {
+        return this.position;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return this.output;
+    }
+
+    setScript(value) {
+        this.script = value;
+    }
+}
+
+class InputBlock extends BaseBlock {
+    constructor(name, outputType, position) {
+        super();
+        this.position = position;
+        this.name = name;
+        this.id = nextId();
+        this.output = outputType;
+    }
+
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    getType() {
+        return BlockTypes.Input;
+    }
+
+    getPosition() {
+        return this.position;
+    }
+
+    getInputs() {
+        return [];
+    }
+
+    getOutput() {
+        return this.output;
+    }
+}
+
+class OutputBlock extends BaseBlock {
+    constructor(inputType, position) {
+        super();
+        this.position = position;
+        this.id = nextId();
+        this.input = inputType; // TODO infer type
+    }
+
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return "Output";
+    }
+
+    getType() {
+        return BlockTypes.Output;
+    }
+
+    getPosition() {
+        return this.position;
+    }
+
+    getInputs() {
+        return [this.input];
     }
 
     getOutput() {

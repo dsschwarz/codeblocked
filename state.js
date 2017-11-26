@@ -2,7 +2,10 @@ class State {
     constructor() {
         this.program = new Program();
 
-        this.modulePath = [new ModuleInfo(this.program.topLevelModule, "Root")];
+        /**
+         * @type {Module[]}
+         */
+        this.modulePath = [this.program.topLevelModule];
         /**
          * @type {BaseBlock}
          */
@@ -14,11 +17,10 @@ class State {
         this._listeners = {};
     }
 
+    /**
+     * @returns {Module}
+     */
     currentModule() {
-        return this.currentModuleInfo().module;
-    }
-
-    currentModuleInfo() {
         return this.modulePath[this.modulePath.length - 1];
     }
 
@@ -47,8 +49,11 @@ class State {
         }, this);
     }
 
-    addModule(moduleInfo) {
-        this.modulePath.push(moduleInfo);
+    /**
+     * @param module {Module}
+     */
+    addModule(module) {
+        this.modulePath.push(module);
         this.selectedBlock = null;
         this.trigger(ChangeTopics.SelectedBlock);
         this.trigger(ChangeTopics.ModulePath);
@@ -67,16 +72,5 @@ class State {
     setMode(mode) {
         this.mode = mode;
         this.trigger(ChangeTopics.Mode);
-    }
-}
-
-class ModuleInfo {
-    /**
-     * @param module Module
-     * @param name string
-     */
-    constructor(module, name) {
-        this.module = module;
-        this.name = name;
     }
 }

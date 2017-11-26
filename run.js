@@ -74,24 +74,21 @@ class ModuleEvaluator {
         this.inputs = inputs;
         this.reporter = reporter;
 
-/*
-        // TODO only add blocks that are dependencies of the output block
-        this.evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
-        var initialBlocks = this.getInitialBlocks(this.evaluationBlocks);
+        var allBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
+        var outputBlock = allBlocks.find(function (evaluationBlock) {
+            return evaluationBlock.block.getType() == BlockTypes.Output;
+        });
+        if (outputBlock == undefined) {
+            throw new Error("Module must have exactly one output");
+        }
+        this.evaluationBlockLimbo = {};
+        allBlocks.forEach(function (eBlock) {
+            this.evaluationBlockLimbo[eBlock.block.getId()] = eBlock;
+        }, this);
 
-        // satisfy all blocks that depend on the input blocks
-
-        // compute initial dependencies in first cycle, for efficiency
-        // partition blocks in dependency tree into ready (no dependencies) and pending (has unevaluated dependencies)
-        this.pendingBlocks = [];
-        this.readyBlocks = [];*/
-
-        // TODO only add blocks that are dependencies of the output block
-        var evaluationBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
-        var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(evaluationBlocks);
-
-        this.pendingBlocks = pendingAndReadyBlocks[0];
-        this.readyBlocks = pendingAndReadyBlocks[1];
+        var dependencyList = this.buildDependencyTree(outputBlock);
+        this.pendingBlocks = dependencyList.pending;
+        this.readyBlocks = dependencyList.ready;
 
         // latest result is set externally. It is the result of evaluating the current dependency
         this._latestResult = undefined;
@@ -107,8 +104,8 @@ class ModuleEvaluator {
             throw "Ready block is not ready"
         }
 
-        if (currentBlock.block.getContents().isStringContents()) {
-            var result = this.evaluateBlock(currentBlock);
+        if (currentBlock.block.getType() == BlockTypes.JavaScript) {
+            var result = this.evaluateJavascriptBlock(currentBlock);
             return this.broadcastResult(result, currentBlock.block);
         } else {
             if (this._hasLatestResult) {
@@ -120,10 +117,6 @@ class ModuleEvaluator {
                 return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs);
             }
         }
-    }
-
-    getInitialBlocks(blocks) {
-        // return the output block
     }
 
     /**
@@ -148,7 +141,6 @@ class ModuleEvaluator {
         this.readyBlocks.push.apply(this.readyBlocks, pendingAndReadyBlocks[1]);
 
         if (this.pendingBlocks.length == 0 && this.readyBlocks.length == 0) {
-            // TODO add an explicit output block for every module
             return new ModuleEvaluatorResultCompleted(result);
         } else {
             if (this.readyBlocks.length == 0) {
@@ -169,26 +161,45 @@ class ModuleEvaluator {
      * @param evaluationBlock {EvaluationBlock}
      * @returns {*}
      */
-    evaluateBlock(evaluationBlock) {
+    evaluateJavascriptBlock(evaluationBlock) {
 
         var scope = {};
         evaluationBlock.inputs.forEach(function (evaluationInput) {
             scope[evaluationInput.name] = evaluationInput.value;
         });
 
-        return _execute.call(scope, evaluationBlock.block.getContents().value, this.reporter);
+        return _execute.call(scope, evaluationBlock.block.script, this.reporter);
+    }
+
+    buildDependencyTree(rootBlock) {
+        var readyBlocks = [];
+        var pendingBlocks = [];
+        function recursiveBuildTree(currentBlock) {
+            var dependencies = this.getDependencies(currentBlock);
+            if (dependencies.length == 0) {
+                readyBlocks.push(currentBlock);
+            } else {
+                pendingBlocks.push(currentBlock);
+                dependencies.forEach((block) => recursiveBuildTree(block))
+            }
+        }
+        recursiveBuildTree(rootBlock);
+        return {
+            ready: readyBlocks,
+            pending: pendingBlocks
+        }
     }
 
     /**
      * @param evaluationBlock {EvaluationBlock}
      */
     getDependencies(evaluationBlock) {
-        if (evaluationBlock.block.getType() == BlockTypes.Normal) {
+        if (evaluationBlock.block.getType() == BlockTypes.Module) {
             return evaluationBlock.inputs
                 .filter((input) => !input.satisfied)
-                .map((input)  => this.module.getConnectionToId(evaluationBlock.block.id, input.index))
+                .map((input)  => this.module.getConnectionToId(evaluationBlock.block.getId(), input.index))
                 .map((connection) => {
-                    var dependency = this.evaluationBlocks.find((eBlock) => eBlock.block.id == connection.fromBlockId)
+                    var dependency = this.evaluationBlockLimbo[connection.fromBlockId];
                     if (dependency) {
                         return dependency
                     } else {
