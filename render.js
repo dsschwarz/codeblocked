@@ -161,13 +161,13 @@ class Renderer {
             .classed("io-line", true);
 
         // center the output area, three quarters down and sticking out by a bit
-        var outputsToUpdate = result.allBlocks.selectAll(".output-area")
+        var outputsToUpdate = result.allBlocks.select(".output-area")
             .attr("transform", data => "translate(" + data.getPosition().width/4 + ", " + data.getPosition().height*0.75 + ")");
 
-        outputsToUpdate.selectAll(".output-click-area")
+        outputsToUpdate.select(".output-click-area")
             .attr("height", data => data.getPosition().height/3)
             .attr("width", data => data.getPosition().width/2);
-        outputsToUpdate.selectAll(".output-line")
+        outputsToUpdate.select(".output-line")
             .attr("d", block => {
                 return "M" + block.getPosition().width/4 + " " + block.getPosition().height/4 + " v" + BlockHelpers.getIOLineLength()
             });
@@ -262,16 +262,18 @@ class Renderer {
             .classed("selected", data => data == renderer.state.selectedBlock)
             .attr("transform", data => _translate(data.getPosition().x, data.getPosition().y) );
 
-        allBlocks.selectAll(".background")
+        allBlocks.select(".background")
             .attr("x", 0)
             .attr("y", 0)
             .attr("width", data => data.getPosition().width)
             .attr("height", data => data.getPosition().height);
 
-        allBlocks.selectAll(".block-name-label")
+        allBlocks.select(".block-name-label")
             .attr("x", data => data.getPosition().width/2)
             .attr("y", data => data.getPosition().height/2)
-            .text(data => data.getName());
+            .text(data => {
+                return data.getName()
+            });
 
         blockElements.exit().remove();
 

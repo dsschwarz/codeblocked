@@ -157,10 +157,15 @@ class ModuleEvaluator {
             /**
              * @type {EvaluationBlock}
              */
-            var toBlock = this.pendingBlocks.findBlock(toBlockId) || this.reserve.getBlock(connection.toBlockId);
+            var toBlock = this.pendingBlocks.findBlock(toBlockId) || this.reserve.getBlock(toBlockId);
             toBlock.inputs[connection.inputIndex].setValue(result);
-            this.buildDependencyTree(toBlock.block.getId());
         });
+        _.chain(connections)
+            .map(connection => connection.toBlockId)
+            .uniq()
+            .each(toBlockId => {
+                this.buildDependencyTree(toBlockId);
+            });
 
         if (this.readyBlocks.getSize() == 0) {
             throw "Deadlock detected"
