@@ -86,7 +86,7 @@ class Renderer {
      */
     renderModule(module, parent) {
         var container = this.renderModuleContainer(parent, module);
-        this.renderBlocks(container.selectAll(".code-block").data(module.blocks));
+        this.renderBlocks(container.selectAll(".code-block").data(module.allBlocks()));
 
         var connectionContainer = container.selectAll(".connection-container")
             .data([0]);
@@ -136,7 +136,6 @@ class Renderer {
             });
 
         moduleElement = moduleElement.merge(newElem);
-
 
         return moduleElement;
     }

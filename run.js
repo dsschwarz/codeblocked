@@ -57,12 +57,6 @@ class ModuleEvaluatorResultHasDependency {
     }
 }
 
-function _partitionPendingAndReadyBlocks(evaluationBlocks) {
-    return _.partition(evaluationBlocks, function (evaluationBlock) {
-        return !evaluationBlock.ready()
-    });
-}
-
 class ModuleEvaluator {
     /**
      * @param module {Module}
@@ -74,21 +68,28 @@ class ModuleEvaluator {
         this.inputs = inputs;
         this.reporter = reporter;
 
-        var allBlocks = module.blocks.map(function (block) { return new EvaluationBlock(block)} );
-        var outputBlock = allBlocks.find(function (evaluationBlock) {
-            return evaluationBlock.block.getType() == BlockTypes.Output;
+        var allBlocks = module.allBlocks().map(function (block) {
+            return new EvaluationBlock(block)
         });
-        if (outputBlock == undefined) {
-            throw new Error("Module must have exactly one output");
-        }
-        this.evaluationBlockLimbo = {};
-        allBlocks.forEach(function (eBlock) {
-            this.evaluationBlockLimbo[eBlock.block.getId()] = eBlock;
-        }, this);
 
-        var dependencyList = this.buildDependencyTree(outputBlock);
-        this.pendingBlocks = dependencyList.pending;
-        this.readyBlocks = dependencyList.ready;
+        /**
+         * The block currently being evaluated
+         * @type {EvaluationBlock}
+         */
+        this.currentBlock = null;
+        // Blocks that are ready to be evaluated
+        this.readyBlocks = new BlockCollection();
+        // Blocks that need to be evaluated, but have unevaluated dependencies
+        this.pendingBlocks = new BlockCollection();
+        // the blocks that are not currently depended on by the OutputBlock
+        this.reserve = new BlockCollection();
+        this.reserve.addBlocks(allBlocks);
+
+        // All the blocks in the ready, pending, and reserve pools
+        this.allBlocks = new BlockCollection();
+        this.allBlocks.addBlocks(allBlocks);
+
+        this.buildDependencyTree(module.outputBlock.getId());
 
         // latest result is set externally. It is the result of evaluating the current dependency
         this._latestResult = undefined;
@@ -99,23 +100,48 @@ class ModuleEvaluator {
      * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete | ModuleEvaluatorResultHasDependency}
      */
     runOnce() {
-        var currentBlock = this.readyBlocks.pop();
-        if (!currentBlock.ready()) {
+        if (!this.currentBlock) {
+            this.currentBlock = this.readyBlocks.popBlock();
+        }
+
+        if (!this.currentBlock.ready()) {
             throw "Ready block is not ready"
         }
 
-        if (currentBlock.block.getType() == BlockTypes.JavaScript) {
+        var evaluatorResult = this.runOnceInternal(this.currentBlock);
+        if (!evaluatorResult.moduleDependency) {
+            this.allBlocks.removeBlock(this.currentBlock.block.getId());
+            this.currentBlock = null;
+        }
+        return evaluatorResult;
+    }
+
+    /**
+     * @param currentBlock {EvaluationBlock}
+     * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete | ModuleEvaluatorResultHasDependency}
+     */
+    runOnceInternal(currentBlock) {
+        var blockType = currentBlock.block.getType();
+        if (blockType == BlockTypes.JavaScript) {
             var result = this.evaluateJavascriptBlock(currentBlock);
             return this.broadcastResult(result, currentBlock.block);
-        } else {
+        } else if (blockType == BlockTypes.Module) {
+            /**
+             * @type {ModuleBlock}
+             */
+            var block = currentBlock.block;
             if (this._hasLatestResult) {
                 this._hasLatestResult = false;
-                return this.broadcastResult(this._latestResult, currentBlock.block);
+                return this.broadcastResult(this._latestResult, block);
             } else {
-                this.readyBlocks.push(currentBlock);
-                var module = currentBlock.block.getContents().module;
+                var module = block.module;
                 return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs);
             }
+        } else if (blockType == BlockTypes.Output) {
+            return new ModuleEvaluatorResultCompleted(currentBlock.inputs[0].value);
+        } else {
+            // add handling for other types
+            throw "Unrecognized type " + blockType;
         }
     }
 
@@ -125,33 +151,27 @@ class ModuleEvaluator {
      * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete}
      */
     broadcastResult(result, fromBlock) {
-        var dependencies = {}; // quick lookup of dependent blocks
-        this.module.getConnectionsFromId(fromBlock.id).forEach(function (connection) {
-            dependencies[connection.toBlockId] = connection;
-        });
-        this.pendingBlocks.forEach(function (evaluationBlock) {
-            var connection = dependencies[evaluationBlock.block.id];
-            if (connection) {
-                evaluationBlock.inputs[connection.inputIndex].setValue(result);
-            }
+        var connections = this.module.getConnectionsFromId(fromBlock.getId());
+        connections.forEach(connection => {
+            var toBlockId = connection.toBlockId;
+            /**
+             * @type {EvaluationBlock}
+             */
+            var toBlock = this.pendingBlocks.findBlock(toBlockId) || this.reserve.getBlock(connection.toBlockId);
+            toBlock.inputs[connection.inputIndex].setValue(result);
+            this.buildDependencyTree(toBlock.block.getId());
         });
 
-        var pendingAndReadyBlocks = _partitionPendingAndReadyBlocks(this.pendingBlocks);
-        this.pendingBlocks = pendingAndReadyBlocks[0];
-        this.readyBlocks.push.apply(this.readyBlocks, pendingAndReadyBlocks[1]);
-
-        if (this.pendingBlocks.length == 0 && this.readyBlocks.length == 0) {
-            return new ModuleEvaluatorResultCompleted(result);
-        } else {
-            if (this.readyBlocks.length == 0) {
-                throw "Deadlock detected"
-            }
-            return new ModuleEvaluatorResultIncomplete();
+        if (this.readyBlocks.getSize() == 0) {
+            throw "Deadlock detected"
         }
+        return new ModuleEvaluatorResultIncomplete();
     }
 
     setDependencyResult(result) {
-        if (this._hasLatestResult) {throw "Setting a new result before consuming the latest one"}
+        if (this._hasLatestResult) {
+            throw "Setting a new result before consuming the latest one"
+        }
 
         this._latestResult = result;
         this._hasLatestResult = true;
@@ -171,42 +191,67 @@ class ModuleEvaluator {
         return _execute.call(scope, evaluationBlock.block.script, this.reporter);
     }
 
-    buildDependencyTree(rootBlock) {
-        var readyBlocks = [];
-        var pendingBlocks = [];
-        function recursiveBuildTree(currentBlock) {
-            var dependencies = this.getDependencies(currentBlock);
+    /**
+     * @param rootBlockId {number}
+     */
+    buildDependencyTree(rootBlockId) {
+        var that = this;
+        /**
+         * Block ids that have been processed already
+         * @type {Object.<number, boolean>}
+         */
+        var evaluated = {};
+
+        /**
+         * @param currentBlockId {number}
+         */
+        function recursiveBuildTree(currentBlockId) {
+            // can end if already evaluated dependencies for this block
+            if (evaluated[currentBlockId]) return;
+            // blocks in ready pool have no more dependencies
+            if (that.readyBlocks.containsBlock(currentBlockId)) return;
+
+            // mark block as evaluated
+            evaluated[currentBlockId] = true;
+
+            var currentBlock = that.allBlocks.getBlock(currentBlockId);
+            var dependencies = that.getDependencies(currentBlock);
             if (dependencies.length == 0) {
-                readyBlocks.push(currentBlock);
+                that.removeFromPendingOrReserve(currentBlockId);
+                that.readyBlocks.addBlock(currentBlock);
             } else {
-                pendingBlocks.push(currentBlock);
-                dependencies.forEach((block) => recursiveBuildTree(block))
+                if (!that.pendingBlocks.containsBlock(currentBlockId)) {
+                    that.reserve.removeBlock(currentBlockId);
+                    that.pendingBlocks.addBlock(currentBlock);
+                }
+                dependencies.forEach((blockId) => {
+                    recursiveBuildTree(blockId)
+                });
             }
         }
-        recursiveBuildTree(rootBlock);
-        return {
-            ready: readyBlocks,
-            pending: pendingBlocks
+        recursiveBuildTree(rootBlockId);
+    }
+
+    removeFromPendingOrReserve(blockId) {
+        if (this.pendingBlocks.containsBlock(blockId)) {
+            this.pendingBlocks.removeBlock(blockId);
+        } else {
+            // note: throws error if block does not exist here either
+            this.reserve.removeBlock(blockId);
         }
     }
 
     /**
      * @param evaluationBlock {EvaluationBlock}
+     * @return {number[]}
      */
     getDependencies(evaluationBlock) {
-        if (evaluationBlock.block.getType() == BlockTypes.Module) {
+        // if (evaluationBlock.block.getType() == BlockTypes.Module) {
             return evaluationBlock.inputs
                 .filter((input) => !input.satisfied)
                 .map((input)  => this.module.getConnectionToId(evaluationBlock.block.getId(), input.index))
-                .map((connection) => {
-                    var dependency = this.evaluationBlockLimbo[connection.fromBlockId];
-                    if (dependency) {
-                        return dependency
-                    } else {
-                        throw new Error("Dependency not found for block: " + evaluationBlock.block.name + " input index: " + connection.inputIndex);
-                    }
-                });
-        }
+                .map((connection) => connection.fromBlockId);
+        // }
     }
 }
 
@@ -291,5 +336,76 @@ class EvaluationInput {
 
         this.value = value;
         this.satisfied = true;
+    }
+}
+
+class BlockCollection {
+    constructor() {
+        /**
+         * @type {Object.<number, EvaluationBlock>}
+         */
+        this._blocks = {};
+    }
+
+    getSize() {
+        return Object.keys(this._blocks).length;
+    }
+
+    /**
+     * @param block {EvaluationBlock}
+     */
+    addBlock(block) {
+        this._blocks[block.block.getId()] = block;
+    }
+
+    /**
+     * @param blocks {EvaluationBlock[]}
+     */
+    addBlocks(blocks) {
+        blocks.forEach(block => this.addBlock(block));
+    }
+
+    /**
+     * @param blockId {number}
+     * @return {boolean}
+     */
+    containsBlock(blockId) {
+        return this._blocks[blockId] != undefined;
+    }
+
+    /**
+     * @param blockId {number}
+     * @return {EvaluationBlock}
+     */
+    getBlock(blockId) {
+        var block = this.findBlock(blockId);
+        if (block == undefined) throw new Error("Block id does not exist in collection: " + blockId);
+        return block;
+    }
+
+    /**
+     * @param blockId {number}
+     * @return {EvaluationBlock}
+     */
+    findBlock(blockId) {
+        return this._blocks[blockId];
+    }
+
+    /**
+     * Remove and return a block from this collection
+     */
+    popBlock() {
+        var key = Object.keys(this._blocks)[0];
+        return this.removeBlock(key);
+    }
+
+    /**
+     * @param blockId {number}
+     *
+     */
+    removeBlock(blockId) {
+        var block = this.getBlock(blockId);
+        delete this._blocks[blockId];
+        return block;
     }
 }

@@ -40,6 +40,7 @@ $(function () {
     program.topLevelModule.connections.push(new Connection(block5.id, block6.id, 0));
     program.topLevelModule.connections.push(new Connection(block4.id, collector.id, 0));
     program.topLevelModule.connections.push(new Connection(block6.id, collector.id, 1));
+    program.topLevelModule.connections.push(new Connection(collector.id, program.topLevelModule.outputBlock.getId(), 0));
 
     state.selectBlock(block1);
 

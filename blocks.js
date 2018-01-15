@@ -1,6 +1,11 @@
 var DEFAULT_WIDTH = 100;
 var DEFAULT_HEIGHT = 80;
+var BLOCK_OFFSET = DEFAULT_WIDTH*2;
 var IO_LINE_LENGTH = 5;
+
+/**
+ * @return {number}
+ */
 var nextId = (function () {
     var idCounter = 0;
     return function () {
@@ -46,6 +51,9 @@ class BaseBlock {
     constructor() {
     }
 
+    /**
+     * @return {number}
+     */
     getId() {
         throw "Not implemented"
     }
@@ -146,7 +154,7 @@ class ModuleBlock extends BaseBlock {
 
     addInput(input) {
         var module = this.module;
-        module.inputs.push(input);
+        module.addInput(input);
     }
 }
 
@@ -245,6 +253,9 @@ class InputBlock extends BaseBlock {
         return BlockTypes.Input;
     }
 
+    /**
+     * @returns {BlockPosition}
+     */
     getPosition() {
         return this.position;
     }
@@ -261,9 +272,9 @@ class InputBlock extends BaseBlock {
 class OutputBlock extends BaseBlock {
     constructor(inputType, position) {
         super();
-        this.position = position;
+        this.position = position || new BlockPosition(500, 500);
         this.id = nextId();
-        this.input = inputType; // TODO infer type
+        this.input = inputType || Type.untyped(); // TODO infer type
     }
 
 

@@ -31,11 +31,24 @@ class Module {
         this.id = nextId();
         this.name = name;
         this.connections = [];
-        this.blocks = [];
+        this._blocks = [];
         this.inputs = [];
         this.output = Type.untyped(); // TODO infer type
+        /**
+         * @type {InputBlock[]}
+         */
         this.inputBlocks = [];
+        /**
+         * @type {OutputBlock}
+         */
         this.outputBlock = new OutputBlock();
+    }
+
+    /**
+     * @returns {Array.<BaseBlock>}
+     */
+    allBlocks() {
+        return this.inputBlocks.concat(this._blocks.concat(this.outputBlock));
     }
 
     /**
@@ -43,15 +56,35 @@ class Module {
      * @returns {BaseBlock}
      */
     findBlock(id) {
-        for (var i=0; i<this.blocks.length; i++) {
-            if (this.blocks[i].id === id) {
-                return this.blocks[i];
+        var blocks = this.allBlocks();
+        for (var i=0; i<blocks.length; i++) {
+            if (blocks[i].id === id) {
+                return blocks[i];
             }
         }
     }
 
     addBlock(block) {
-        this.blocks.push(block);
+        this._blocks.push(block);
+    }
+
+    /**
+     * Add an input to this module
+     * @param input {Input}
+     */
+    addInput(input) {
+        this.inputs.push(input);
+        var inputBlock = new InputBlock(input.name, input.type, this._getNextInputBlockPosition());
+        this.inputBlocks.push(inputBlock);
+    }
+
+    _getNextInputBlockPosition() {
+        if (this.inputBlocks.length == 0) {
+            return new BlockPosition(10, 10);
+        } else {
+            var lastBlockPosition = this.inputBlocks[this.inputBlocks.length - 1].getPosition();
+            return new BlockPosition(lastBlockPosition.x + BLOCK_OFFSET, lastBlockPosition.y);
+        }
     }
 
     getConnection(fromBlock, toBlock, inputIndex) {
@@ -63,14 +96,16 @@ class Module {
     }
 
     getConnectionToId(toBlockId, inputIndex) {
-        return _.findWhere(this.connections, {
+        var result = _.findWhere(this.connections, {
             toBlockId: toBlockId,
             inputIndex: inputIndex
         });
+        if (result == undefined) throw "Could not find connection to block " + toBlockId + " at index " + inputIndex;
+        return result;
     }
 
     /**
-     * @param fromBlockId {string}
+     * @param fromBlockId {number}
      * @returns {Array.<Connection>}
      */
     getConnectionsFromId(fromBlockId) {

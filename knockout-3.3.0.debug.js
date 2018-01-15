@@ -95,7 +95,7 @@ ko.utils = (function () {
     var ieVersion = document && (function() {
         var version = 3, div = document.createElement('div'), iElems = div.getElementsByTagName('i');
 
-        // Keep constructing conditional HTML blocks until we hit one that resolves to an empty fragment
+        // Keep constructing conditional HTML _blocks until we hit one that resolves to an empty fragment
         while (
             div.innerHTML = '<!--[if gt IE ' + (++version) + ']><i></i><![endif]-->',
             iElems[0]
