@@ -12,15 +12,22 @@ class ProgramEvaluator {
         while (this.moduleEvaluators.length > 0) {
             var evaluator = this.moduleEvaluators.pop();
             var result = evaluator.runOnce();
-            if (result.completed()) {
+
+            // if this block has finished evaluating, set the result on its dependency
+            if (result.completed() && !result.moduleDependency) {
                 if (this.moduleEvaluators.length > 0) {
                     this.moduleEvaluators[this.moduleEvaluators.length - 1].setDependencyResult(result.outputValue);
                 }
-            } else {
+            }
+
+            // If a result is not completed, it should go back in the queue
+            if (!result.completed()) {
                 this.moduleEvaluators.push(evaluator);
-                if (result.moduleDependency) {
-                    this.moduleEvaluators.push(this._createModuleEvaluator(result.moduleDependency, result.inputs));
-                }
+            }
+
+            // if the current module depends on another module, add that to the front of the queue
+            if (result.moduleDependency) {
+                this.moduleEvaluators.push(this._createModuleEvaluator(result.moduleDependency, result.inputs));
             }
         }
     }
@@ -30,7 +37,7 @@ class ProgramEvaluator {
     }
 }
 
-
+// The three result classes. completed flag means module no longer needs to be evaluated
 class ModuleEvaluatorResultCompleted {
     constructor(outputValue) {
         this.outputValue = outputValue;
@@ -46,14 +53,15 @@ class ModuleEvaluatorResultIncomplete {
     }
 }
 class ModuleEvaluatorResultHasDependency {
-    constructor(moduleDependency, inputs) {
+    constructor(moduleDependency, inputs, isFinalBlock) {
         if (moduleDependency == undefined) {throw "Module dependency undefined"}
         this.moduleDependency = moduleDependency;
         this.inputs = inputs;
+        this.isFinalBlock = isFinalBlock;
     }
 
     completed() {
-        return false;
+        return this.isFinalBlock;
     }
 }
 
@@ -89,7 +97,11 @@ class ModuleEvaluator {
         this.allBlocks = new BlockCollection();
         this.allBlocks.addBlocks(allBlocks);
 
-        this.buildDependencyTree(module.outputBlock.getId());
+        var outputBlockId = this.outputBlockId();
+        this.buildDependencyTree(outputBlockId);
+
+        // output block must be in pending or ready. remove it
+        this.removeFromReadyOrPending(outputBlockId);
 
         // latest result is set externally. It is the result of evaluating the current dependency
         this._latestResult = undefined;
@@ -135,17 +147,20 @@ class ModuleEvaluator {
                 return this.broadcastResult(this._latestResult, block);
             } else {
                 var module = block.module;
-                return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs);
+                var isFinalBlock = this.isComplete();
+                return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs,isFinalBlock);
             }
         } else if (blockType == BlockTypes.Multiply) {
             var value = currentBlock.inputs[0].value * currentBlock.inputs[1].value;
             return this.broadcastResult(value, currentBlock.block);
-        } else if (blockType == BlockTypes.Output) {
-            return new ModuleEvaluatorResultCompleted(currentBlock.inputs[0].value);
         } else {
             // add handling for other types
             throw "Unrecognized type " + blockType;
         }
+    }
+
+    outputBlockId() {
+        return this.module.outputBlock.getId();
     }
 
     /**
@@ -154,7 +169,8 @@ class ModuleEvaluator {
      * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete}
      */
     broadcastResult(result, fromBlock) {
-        var connections = this.module.getConnectionsFromId(fromBlock.getId());
+        var connections = this.module.getConnectionsFromId(fromBlock.getId())
+            .filter(connection => connection.toBlockId != this.outputBlockId());
         connections.forEach(connection => {
             var toBlockId = connection.toBlockId;
             /**
@@ -166,14 +182,20 @@ class ModuleEvaluator {
         _.chain(connections)
             .map(connection => connection.toBlockId)
             .uniq()
-            .each(toBlockId => {
-                this.buildDependencyTree(toBlockId);
-            });
+            .each(toBlockId => this.buildDependencyTree(toBlockId) );
 
-        if (this.readyBlocks.getSize() == 0) {
-            throw "Deadlock detected"
+        if (this.isComplete()) {
+            return new ModuleEvaluatorResultCompleted(result);
+        } else {
+            if (this.readyBlocks.getSize() == 0) {
+                throw "Deadlock detected"
+            }
+            return new ModuleEvaluatorResultIncomplete();
         }
-        return new ModuleEvaluatorResultIncomplete();
+    }
+
+    isComplete() {
+        return this.pendingBlocks.getSize() == 0 && this.readyBlocks.getSize() == 0
     }
 
     setDependencyResult(result) {
@@ -246,6 +268,15 @@ class ModuleEvaluator {
         } else {
             // note: throws error if block does not exist here either
             this.reserve.removeBlock(blockId);
+        }
+    }
+
+    removeFromReadyOrPending(blockId) {
+        if (this.readyBlocks.containsBlock(blockId)) {
+            this.readyBlocks.removeBlock(blockId);
+        } else {
+            // note: throws error if block does not exist here either
+            this.pendingBlocks.removeBlock(blockId);
         }
     }
 
