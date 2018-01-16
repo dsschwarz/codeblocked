@@ -22,8 +22,13 @@ var BlockTypes = {
     And: "and",
     Ghost: "ghost", // preview block when placing
     BooleanOperator: "booleanOp",
+    Multiply: "multiply",
     Assign: "assign",
     Combine: "combine",
     Literal: "literal",
     Prompt: "prompt"
 };
+
+var OperatorTypes = [
+    BlockTypes.Multiply
+];

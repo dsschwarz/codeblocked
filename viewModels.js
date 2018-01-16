@@ -19,12 +19,8 @@ createSidePanelVM = function (state) {
             var blockType = state.selectedBlock.getType();
             if (blockType == BlockTypes.Module) {
                 return _createModuleBlockVM(state.selectedBlock, state);
-            } else if (blockType == BlockTypes.JavaScript) {
-                return _basicBlockVM(state.selectedBlock);
-                // } else if (blockType == BlockTypes.Output) {
-                // } else if (blockType == BlockTypes.Output) {
             } else {
-                throw new Error("Block type not supported: " + blockType)
+                return _basicBlockVM(state.selectedBlock);
             }
         }
     }

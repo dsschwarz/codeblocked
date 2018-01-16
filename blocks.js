@@ -48,7 +48,9 @@ class BlockHelpers {
 }
 
 class BaseBlock {
-    constructor() {
+    constructor(blockType, position) {
+        this.position = position;
+        this.blockType = blockType;
     }
 
     /**
@@ -63,11 +65,14 @@ class BaseBlock {
     }
 
     getType() {
-        throw "Not implemented";
+        return this.blockType;
     }
 
+    /**
+     * @returns {BlockPosition}
+     */
     getPosition() {
-        throw "Not implemented";
+        return this.position;
     }
 
     getInputs() {
@@ -85,9 +90,8 @@ class ModuleBlock extends BaseBlock {
      * @param position {BlockPosition}
      */
     constructor(module, position) {
-        super();
+        super(BlockTypes.Module, position);
         this.id = nextId();
-        this.position = position;
         this.module = module;
     }
 
@@ -112,16 +116,7 @@ class ModuleBlock extends BaseBlock {
         return this.module.name;
     }
 
-    getType() {
-        return BlockTypes.Module;
-    }
-
-
     // Shared methods
-    getPosition() {
-        return this.position;
-    }
-
     /**
      * @returns {Array<Input>}
      */
@@ -169,21 +164,15 @@ class BlockPosition {
 
 class GhostBlock extends BaseBlock {
     constructor(name, x, y) {
-        super();
-        this.position = new BlockPosition(x - DEFAULT_WIDTH/2, y - DEFAULT_HEIGHT/2);
+        super(
+            BlockTypes.Ghost,
+            new BlockPosition(x - DEFAULT_WIDTH/2, y - DEFAULT_HEIGHT/2)
+        );
         this.name = name;
     }
 
     getName() {
         return this.name;
-    }
-
-    getType() {
-        return BlockTypes.Ghost;
-    }
-
-    getPosition() {
-        return this.position;
     }
 
     getOutput() {
@@ -193,8 +182,7 @@ class GhostBlock extends BaseBlock {
 
 class JavascriptBlock extends BaseBlock {
     constructor(name, position, inputs) {
-        super();
-        this.position = position;
+        super(BlockTypes.JavaScript, position);
         this.name = name;
         this.id = nextId();
         this.inputs = inputs;
@@ -208,14 +196,6 @@ class JavascriptBlock extends BaseBlock {
 
     getName() {
         return this.name;
-    }
-
-    getType() {
-        return BlockTypes.JavaScript;
-    }
-
-    getPosition() {
-        return this.position;
     }
 
     getInputs() {
@@ -233,8 +213,7 @@ class JavascriptBlock extends BaseBlock {
 
 class InputBlock extends BaseBlock {
     constructor(name, outputType, position) {
-        super();
-        this.position = position;
+        super(BlockTypes.Input, position);
         this.name = name;
         this.id = nextId();
         this.output = outputType;
@@ -249,17 +228,6 @@ class InputBlock extends BaseBlock {
         return this.name;
     }
 
-    getType() {
-        return BlockTypes.Input;
-    }
-
-    /**
-     * @returns {BlockPosition}
-     */
-    getPosition() {
-        return this.position;
-    }
-
     getInputs() {
         return [];
     }
@@ -271,8 +239,9 @@ class InputBlock extends BaseBlock {
 
 class OutputBlock extends BaseBlock {
     constructor(inputType, position) {
-        super();
-        this.position = position || new BlockPosition(500, 500);
+        super(
+            BlockTypes.Output,
+            position || new BlockPosition(500, 500));
         this.id = nextId();
         this.input = inputType || Type.untyped(); // TODO infer type
     }
@@ -286,19 +255,45 @@ class OutputBlock extends BaseBlock {
         return "Output";
     }
 
-    getType() {
-        return BlockTypes.Output;
-    }
-
-    getPosition() {
-        return this.position;
-    }
-
     getInputs() {
         return [this.input];
     }
 
     getOutput() {
         return undefined;
+    }
+}
+
+// for numeric operators
+class OperatorBlock extends BaseBlock {
+    constructor(blockType, position) {
+        if (!_.contains(OperatorTypes, blockType)) throw "Block type " + blockType + " is not an operator";
+
+        super(blockType, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("a"),
+            new Input("b")
+        ]
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        if (this.getType() == BlockTypes.Multiply) {
+            return "Multiply";
+        } else {
+            throw "Block type " + this.blockType + " has no defined display name";
+        }
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped(); // todo should be a number
     }
 }

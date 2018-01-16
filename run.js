@@ -137,6 +137,9 @@ class ModuleEvaluator {
                 var module = block.module;
                 return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs);
             }
+        } else if (blockType == BlockTypes.Multiply) {
+            var value = currentBlock.inputs[0].value * currentBlock.inputs[1].value;
+            return this.broadcastResult(value, currentBlock.block);
         } else if (blockType == BlockTypes.Output) {
             return new ModuleEvaluatorResultCompleted(currentBlock.inputs[0].value);
         } else {
