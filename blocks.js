@@ -96,13 +96,11 @@ class ModuleBlock extends BaseBlock {
     }
 
     /**
-     * @param x {Number}
-     * @param y {Number}
+     * @param position {BlockPosition}
      * @returns {ModuleBlock}
      */
-    static create(x, y) {
+    static create(position) {
         var module = window.globalProgram.createNewModule();
-        var position = new BlockPosition(x, y);
         return new ModuleBlock(module, position);
     }
 
@@ -284,6 +282,16 @@ class OperatorBlock extends BaseBlock {
     getName() {
         if (this.getType() == BlockTypes.Multiply) {
             return "Multiply";
+        } else if (this.getType() == BlockTypes.Divide) {
+            return "Divide";
+        } else if (this.getType() == BlockTypes.Add) {
+            return "Add";
+        } else if (this.getType() == BlockTypes.Subtract) {
+            return "Subtract";
+        } else if (this.getType() == BlockTypes.Exponent) {
+            return "Exponent";
+        } else if (this.getType() == BlockTypes.Equals) {
+            return "Equals";
         } else {
             throw "Block type " + this.blockType + " has no defined display name";
         }

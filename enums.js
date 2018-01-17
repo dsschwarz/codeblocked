@@ -15,14 +15,28 @@ var ChangeTopics = {
 
 var BlockTypes = {
     Module: "module",
-    JavaScript: "javascript",
+    // I/O
     Input: "input",
     Output: "output",
+
+    // control flow
     If: "if",
     And: "and",
-    Ghost: "ghost", // preview block when placing
-    BooleanOperator: "booleanOp",
+
+    // operators
+    Equals: "equals",
     Multiply: "multiply",
+    Divide: "divide",
+    Add: "add",
+    Subtract: "subtract",
+    Exponent: "exponent",
+
+    JavaScript: "javascript",
+    // preview block when placing
+    Ghost: "ghost",
+
+    // unsupported
+    BooleanOperator: "booleanOp",
     Assign: "assign",
     Combine: "combine",
     Literal: "literal",
@@ -30,5 +44,10 @@ var BlockTypes = {
 };
 
 var OperatorTypes = [
-    BlockTypes.Multiply
+    BlockTypes.Equals,
+    BlockTypes.Multiply,
+    BlockTypes.Divide,
+    BlockTypes.Add,
+    BlockTypes.Subtract,
+    BlockTypes.Exponent
 ];

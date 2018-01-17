@@ -129,15 +129,16 @@ class Renderer {
         newElem
             .on("click", function () {
                 if (renderer.state.mode == Modes.Placement) {
-                    var type = prompt("0 = module, 1 = multiply");
-                    var block = new GhostBlock("", d3.event.offsetX, d3.event.offsetY);
+                    var blockPosition = new GhostBlock("", d3.event.offsetX, d3.event.offsetY).getPosition();
 
                     var newBlock;
-                    if (type == "0") {
-                        newBlock = ModuleBlock.create(block.getPosition().x, block.getPosition().y);
-                    } else {
-                        newBlock = new OperatorBlock(BlockTypes.Multiply, block.getPosition());
-                    }
+                    // if (type == "0") {
+                    //     newBlock = ModuleBlock.create(blockPosition);
+                    // } else {
+                    //     var blockType = BlockTypes.Multiply;
+                    //     newBlock = new OperatorBlock(blockType, blockPosition);
+                    // }
+                    debugger;
                     renderer.state.currentModule().addBlock(newBlock);
                     renderer.state.selectBlock(newBlock);
                     renderer.state.setMode(Modes.None);

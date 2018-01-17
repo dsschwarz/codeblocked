@@ -150,8 +150,9 @@ class ModuleEvaluator {
                 var isFinalBlock = this.isComplete();
                 return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs,isFinalBlock);
             }
-        } else if (blockType == BlockTypes.Multiply) {
-            var value = currentBlock.inputs[0].value * currentBlock.inputs[1].value;
+        } else if (_.contains(OperatorTypes, blockType)) {
+            var operatorFunction = getOperator(blockType);
+            var value = operatorFunction(currentBlock.inputs[0].value, currentBlock.inputs[1].value);
             return this.broadcastResult(value, currentBlock.block);
         } else {
             // add handling for other types
