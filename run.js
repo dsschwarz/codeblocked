@@ -101,7 +101,7 @@ class ModuleEvaluator {
         this.buildDependencyTree(outputBlockId);
 
         // output block must be in pending or ready. remove it
-        this.removeFromReadyOrPending(outputBlockId);
+        this.removeFromCollections(outputBlockId, [this.pendingBlocks, this.readyBlocks]);
 
         // latest result is set externally. It is the result of evaluating the current dependency
         this._latestResult = undefined;
@@ -133,27 +133,36 @@ class ModuleEvaluator {
      * @returns {ModuleEvaluatorResultCompleted | ModuleEvaluatorResultIncomplete | ModuleEvaluatorResultHasDependency}
      */
     runOnceInternal(currentBlock) {
+        var block = currentBlock.block;
+        if (block.getType() == BlockTypes.Module && !this._hasLatestResult) {
+            var module = block.module;
+            var isFinalBlock = this.isComplete();
+            return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs, isFinalBlock);
+        } else {
+            var evaluationResult = this.evaluateForValue(currentBlock);
+            return this.broadcastResult(evaluationResult, currentBlock.block);
+        }
+    }
+
+    evaluateForValue(currentBlock) {
         var blockType = currentBlock.block.getType();
         if (blockType == BlockTypes.JavaScript) {
-            var result = this.evaluateJavascriptBlock(currentBlock);
-            return this.broadcastResult(result, currentBlock.block);
+            return this.evaluateJavascriptBlock(currentBlock);
         } else if (blockType == BlockTypes.Module) {
-            /**
-             * @type {ModuleBlock}
-             */
-            var block = currentBlock.block;
             if (this._hasLatestResult) {
                 this._hasLatestResult = false;
-                return this.broadcastResult(this._latestResult, block);
+                return this._latestResult;
             } else {
-                var module = block.module;
-                var isFinalBlock = this.isComplete();
-                return new ModuleEvaluatorResultHasDependency(module, currentBlock.inputs,isFinalBlock);
+                throw "No result available when evaluating ModuleBlock";
             }
         } else if (_.contains(OperatorTypes, blockType)) {
             var operatorFunction = getOperator(blockType);
-            var value = operatorFunction(currentBlock.inputs[0].value, currentBlock.inputs[1].value);
-            return this.broadcastResult(value, currentBlock.block);
+            return operatorFunction(currentBlock.inputs[0].value, currentBlock.inputs[1].value);
+        } else if (blockType == BlockTypes.Input) {
+            var inputIndex = this.module.inputBlocks.findIndex(block => block.getId() == currentBlock.block.getId());
+            if (inputIndex < 0) throw "Input not found. id: " + currentBlock.block.getId();
+
+            return this.inputs[inputIndex].value;
         } else {
             // add handling for other types
             throw "Unrecognized type " + blockType;
@@ -248,7 +257,7 @@ class ModuleEvaluator {
             var currentBlock = that.allBlocks.getBlock(currentBlockId);
             var dependencies = that.getDependencies(currentBlock);
             if (dependencies.length == 0) {
-                that.removeFromPendingOrReserve(currentBlockId);
+                that.removeFromCollections(currentBlockId, [that.pendingBlocks, that.reserve]);
                 that.readyBlocks.addBlock(currentBlock);
             } else {
                 if (!that.pendingBlocks.containsBlock(currentBlockId)) {
@@ -263,21 +272,18 @@ class ModuleEvaluator {
         recursiveBuildTree(rootBlockId);
     }
 
-    removeFromPendingOrReserve(blockId) {
-        if (this.pendingBlocks.containsBlock(blockId)) {
-            this.pendingBlocks.removeBlock(blockId);
-        } else {
-            // note: throws error if block does not exist here either
-            this.reserve.removeBlock(blockId);
-        }
-    }
-
-    removeFromReadyOrPending(blockId) {
-        if (this.readyBlocks.containsBlock(blockId)) {
-            this.readyBlocks.removeBlock(blockId);
-        } else {
-            // note: throws error if block does not exist here either
-            this.pendingBlocks.removeBlock(blockId);
+    removeFromCollections(blockId, collections) {
+        var removed = false;
+        collections.forEach(collection => {
+            if (collection.containsBlock(blockId)) {
+                collection.removeBlock(blockId);
+                removed = true;
+            }
+        });
+        if (!removed) {
+            console.log(blockId);
+            console.log(collections);
+            console.error("Block not in any of the collections")
         }
     }
 

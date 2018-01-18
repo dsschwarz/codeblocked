@@ -305,3 +305,31 @@ class OperatorBlock extends BaseBlock {
         return Type.untyped(); // todo should be a number
     }
 }
+
+class IfBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.If, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("Flag"),
+            new Input("If True"),
+            new Input("If False")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "If"
+    }
+}

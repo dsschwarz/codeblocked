@@ -3,6 +3,14 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
+   createMultiplyExample(state);
+
+    var renderer = new Renderer(state);
+    renderer.render();
+
+});
+
+function createMultiplyExample(state) {
     console.log("Testing render");
     var block1 = new JavascriptBlock("Literal", new BlockPosition(10, 10), []);
     block1.setScript("7");
@@ -10,14 +18,19 @@ $(function () {
     var block3 = new JavascriptBlock("Prompt", new BlockPosition(200, 10), []);
     block3.setScript("prompt('Enter a number')");
 
-    var block2 = new JavascriptBlock("Multiply", new BlockPosition(160, 170), [new Input("a"), new Input("b")]);
-    block2.setScript("this.a*this.b");
+    var block2 = new OperatorBlock(BlockTypes.Multiply, new BlockPosition(160, 170));
 
     var block4 = new JavascriptBlock("Output", new BlockPosition(160, 300), [new Input("value")]);
     block4.setScript("log('Multiplied: ' + this.value)");
 
-    var block5 = new JavascriptBlock("Square", new BlockPosition(300, 170), [new Input("a")]);
-    block5.setScript("this.a*this.a");
+    var squareModule = new Module("Square");
+    squareModule.addInput(new Input("a"));
+    var block = new OperatorBlock(BlockTypes.Multiply, new BlockPosition(200, 100));
+    squareModule.createConnection(squareModule.inputBlocks[0], block, 0);
+    squareModule.createConnection(squareModule.inputBlocks[0], block, 1);
+    squareModule.createConnection(block, squareModule.outputBlock, 0);
+    squareModule.addBlock(block);
+    var block5 = new ModuleBlock(squareModule, new BlockPosition(300, 170));
 
     var block6 = new JavascriptBlock("Output", new BlockPosition(300, 300), [new Input("value")]);
     block6.setScript("log('Squared: ' + this.value)");
@@ -41,10 +54,4 @@ $(function () {
     program.topLevelModule.connections.push(new Connection(block4.id, collector.id, 0));
     program.topLevelModule.connections.push(new Connection(block6.id, collector.id, 1));
     program.topLevelModule.connections.push(new Connection(collector.id, program.topLevelModule.outputBlock.getId(), 0));
-
-    state.selectBlock(block1);
-
-    var renderer = new Renderer(state);
-    renderer.render();
-
-});
+}
