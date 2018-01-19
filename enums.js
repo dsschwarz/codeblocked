@@ -25,6 +25,8 @@ var BlockTypes = {
 
     // operators
     Equals: "equals",
+    GreaterThan: "greaterThan",
+    LessThan: "lessThan",
     Multiply: "multiply",
     Divide: "divide",
     Add: "add",
@@ -45,6 +47,8 @@ var BlockTypes = {
 
 var OperatorTypes = [
     BlockTypes.Equals,
+    BlockTypes.GreaterThan,
+    BlockTypes.LessThan,
     BlockTypes.Multiply,
     BlockTypes.Divide,
     BlockTypes.Add,

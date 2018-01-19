@@ -292,6 +292,10 @@ class OperatorBlock extends BaseBlock {
             return "Exponent";
         } else if (this.getType() == BlockTypes.Equals) {
             return "Equals";
+        } else if (this.getType() == BlockTypes.GreaterThan) {
+            return "Greater";
+        } else if (this.getType() == BlockTypes.LessThan) {
+            return "Smaller";
         } else {
             throw "Block type " + this.blockType + " has no defined display name";
         }

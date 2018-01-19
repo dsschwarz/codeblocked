@@ -3,15 +3,85 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-   createMultiplyExample(state);
+   createFibonacciExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
 
 });
 
+function createFibonacciExample(state) {
+    var module = new Module("Fibonacci");
+    module.addInput(new Input("n"));
+
+    module.inputBlocks[0].getPosition().x = 359;
+    module.inputBlocks[0].getPosition().y = 5;
+
+    var literal1 = new JavascriptBlock("Literal", new BlockPosition(500, 5), []);
+    literal1.setScript("1");
+
+    var literal2 = new JavascriptBlock("Literal", new BlockPosition(647, 5), []);
+    literal2.setScript("2");
+
+    var lessThan = new OperatorBlock(BlockTypes.LessThan, new BlockPosition(377, 200));
+
+    var minus = new OperatorBlock(BlockTypes.Subtract, new BlockPosition(505, 104));
+    var minus2 = new OperatorBlock(BlockTypes.Subtract, new BlockPosition(630, 104));
+    var plus = new OperatorBlock(BlockTypes.Add, new BlockPosition(566, 297));
+
+    var moduleBlock = new ModuleBlock(module, new BlockPosition(505, 200));
+    var moduleBlock2 = new ModuleBlock(module, new BlockPosition(630, 200));
+
+    var ifBlock = new IfBlock(new BlockPosition(500, 389));
+
+    module.addBlock(literal1);
+    module.addBlock(literal2);
+    module.addBlock(lessThan);
+    module.addBlock(minus);
+    module.addBlock(minus2);
+    module.addBlock(plus);
+    module.addBlock(moduleBlock);
+    module.addBlock(moduleBlock2);
+    module.addBlock(ifBlock);
+
+    var n = module.inputBlocks[0];
+    module.createConnection(n, lessThan, 0);
+    module.createConnection(literal2, lessThan, 1);
+
+    module.createConnection(lessThan, ifBlock, 0);
+    module.createConnection(literal1, ifBlock, 1);
+    module.createConnection(plus, ifBlock, 2);
+
+    module.createConnection(moduleBlock, plus, 0);
+    module.createConnection(moduleBlock2, plus, 1);
+
+    module.createConnection(minus, moduleBlock, 0);
+    module.createConnection(minus2, moduleBlock2, 0);
+
+    module.createConnection(n, minus, 0);
+    module.createConnection(literal1, minus, 1);
+
+    module.createConnection(n, minus2, 0);
+    module.createConnection(literal2, minus2, 1);
+
+    module.createConnection(ifBlock, module.outputBlock, 0);
+
+
+    var moduleBlockRoot = new ModuleBlock(module, new BlockPosition(500, 150));
+    var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
+    promptBlock.setScript("prompt('Enter a number')");
+    var logger = new JavascriptBlock("Logger", new BlockPosition(500, 300), [new Input("value")]);
+    logger.setScript("log(this.value)");
+
+    state.program.topLevelModule.addBlock(moduleBlockRoot);
+    state.program.topLevelModule.addBlock(promptBlock);
+    state.program.topLevelModule.addBlock(logger);
+    state.program.topLevelModule.createConnection(promptBlock, moduleBlockRoot, 0);
+    state.program.topLevelModule.createConnection(moduleBlockRoot, logger, 0);
+    state.program.topLevelModule.createConnection(logger, state.program.topLevelModule.outputBlock, 0);
+}
+
 function createMultiplyExample(state) {
-    console.log("Testing render");
     var block1 = new JavascriptBlock("Literal", new BlockPosition(10, 10), []);
     block1.setScript("7");
 

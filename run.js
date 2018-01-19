@@ -9,7 +9,9 @@ class ProgramEvaluator {
     }
 
     run() {
+        var counter = 0;
         while (this.moduleEvaluators.length > 0) {
+            if (counter++ > 10000) throw "Too many iterations";
             var evaluator = this.moduleEvaluators.pop();
             var result = evaluator.runOnce();
 
@@ -116,7 +118,7 @@ class ModuleEvaluator {
             this.currentBlock = this.readyBlocks.popBlock();
         }
 
-        if (!this.currentBlock.ready()) {
+        if (this.getDependencies(this.currentBlock).length > 0) {
             throw "Ready block is not ready"
         }
 
@@ -163,6 +165,19 @@ class ModuleEvaluator {
             if (inputIndex < 0) throw "Input not found. id: " + currentBlock.block.getId();
 
             return this.inputs[inputIndex].value;
+        } else if (blockType == BlockTypes.If) {
+            var flag = currentBlock.inputs[0].value;
+            /**
+             * @type {EvaluationInput}
+             */
+            var resultInput;
+            if (flag) {
+                resultInput = currentBlock.inputs[1];
+            } else {
+                resultInput = currentBlock.inputs[2];
+            }
+            if (!resultInput.satisfied) throw "If block result not satisfied";
+            return resultInput.value;
         } else {
             // add handling for other types
             throw "Unrecognized type " + blockType;
@@ -192,7 +207,12 @@ class ModuleEvaluator {
         _.chain(connections)
             .map(connection => connection.toBlockId)
             .uniq()
-            .each(toBlockId => this.buildDependencyTree(toBlockId) );
+            .each(toBlockId => {
+                // don't include blocks that are still in reserve
+                if (!this.reserve.containsBlock(toBlockId)) {
+                    this.buildDependencyTree(toBlockId)
+                }
+            });
 
         if (this.isComplete()) {
             return new ModuleEvaluatorResultCompleted(result);
@@ -269,6 +289,7 @@ class ModuleEvaluator {
                 });
             }
         }
+
         recursiveBuildTree(rootBlockId);
     }
 
@@ -292,12 +313,27 @@ class ModuleEvaluator {
      * @return {number[]}
      */
     getDependencies(evaluationBlock) {
-        // if (evaluationBlock.block.getType() == BlockTypes.Module) {
+        return this.getRelevantInputs(evaluationBlock)
+            .filter((input) => !input.satisfied)
+            .map((input) => this.module.getConnectionToId(evaluationBlock.block.getId(), input.index))
+            .map((connection) => connection.fromBlockId);
+    }
+
+    getRelevantInputs(evaluationBlock) {
+        if (evaluationBlock.block.getType() == BlockTypes.If) {
+            var flag = evaluationBlock.inputs[0];
+            if (flag.satisfied) {
+                if (flag.value) {
+                   return [evaluationBlock.inputs[1]];
+                } else {
+                   return [evaluationBlock.inputs[2]];
+                }
+            } else {
+               return [flag];
+            }
+        } else {
             return evaluationBlock.inputs
-                .filter((input) => !input.satisfied)
-                .map((input)  => this.module.getConnectionToId(evaluationBlock.block.getId(), input.index))
-                .map((connection) => connection.fromBlockId);
-        // }
+        }
     }
 }
 
@@ -356,10 +392,6 @@ class EvaluationBlock {
          */
         this.inputs = block.getInputs().map(function (input, index) {return new EvaluationInput(input, index)});
         this.block = block;
-    }
-
-    ready() {
-        return _.every(this.inputs, function (input) { return input.satisfied === true })
     }
 }
 

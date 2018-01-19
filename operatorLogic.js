@@ -2,6 +2,10 @@
 function getOperator(blockType) {
     if (blockType == BlockTypes.Equals) {
         return (a, b) => a == b;
+    } else if (blockType == BlockTypes.GreaterThan) {
+        return (a, b) => a > b;
+    } else if (blockType == BlockTypes.LessThan) {
+        return (a, b) => a < b;
     } else if (blockType == BlockTypes.Add) {
         return (a, b) => a + b;
     } else if (blockType == BlockTypes.Subtract) {
