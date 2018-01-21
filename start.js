@@ -3,12 +3,53 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-   createFibonacciExample(state);
+   objectCreationExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
 
 });
+
+function objectCreationExample(state) {
+    var literal1 = new JavascriptBlock("Literal", new BlockPosition(300, 5), []);
+    literal1.setScript("1");
+
+    var literal2 = new JavascriptBlock("Literal", new BlockPosition(500, 5), []);
+    literal2.setScript("\"Human\"");
+
+    var create = new ObjectCreationBlock(new BlockPosition(400, 170));
+    create.createInput();
+    create.createInput();
+    create.inputs[0].name = "Rank";
+    create.inputs[1].name = "Race";
+
+    var literal3 = new JavascriptBlock("Literal", new BlockPosition(520, 170), []);
+    literal3.setScript("\"Brawler\"");
+
+    var literal4 = new JavascriptBlock("Literal", new BlockPosition(630, 170), []);
+    literal4.setScript("2");
+
+    var inherit = new ObjectInheritBlock(new BlockPosition(500, 300));
+    inherit.createInput();
+    inherit.createInput();
+    inherit.inputs[1].name = "Class";
+    inherit.inputs[2].name = "Rank";
+
+    var module = state.program.topLevelModule;
+    module.addBlock(literal1);
+    module.addBlock(literal2);
+    module.addBlock(create);
+    module.addBlock(literal3);
+    module.addBlock(literal4);
+    module.addBlock(inherit);
+
+    module.createConnection(literal1, create, 0);
+    module.createConnection(literal2, create, 1);
+    module.createConnection(create, inherit, 0);
+    module.createConnection(literal3, inherit, 1);
+    module.createConnection(literal4, inherit, 2);
+    module.createConnection(inherit, module.outputBlock, 0);
+}
 
 function createFibonacciExample(state) {
     var module = new Module("Fibonacci");

@@ -39,8 +39,8 @@ var BlockTypes = {
 
     // unsupported
     BooleanOperator: "booleanOp",
-    Assign: "assign",
-    Combine: "combine",
+    Create: "create",
+    Inherit: "inherit",
     Literal: "literal",
     Prompt: "prompt"
 };

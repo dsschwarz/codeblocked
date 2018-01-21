@@ -337,3 +337,65 @@ class IfBlock extends BaseBlock {
         return "If"
     }
 }
+
+class ObjectCreationBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.Create, position);
+        this.id = nextId();
+        this.inputs = [];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Struct"
+    }
+
+    createInput() {
+        var inputs = this.getInputs();
+        var newInput = new Input("field" + (inputs.length + 1));
+        this.inputs.push(newInput);
+    }
+}
+
+class ObjectInheritBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.Inherit, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("base")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Inherit"
+    }
+
+    createInput() {
+        var inputs = this.getInputs();
+        var newInput = new Input("field" + (inputs.length + 1));
+        this.inputs.push(newInput);
+    }
+}

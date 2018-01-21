@@ -178,6 +178,18 @@ class ModuleEvaluator {
             }
             if (!resultInput.satisfied) throw "If block result not satisfied";
             return resultInput.value;
+        } else if (blockType == BlockTypes.Create) {
+            var newObject = {};
+            currentBlock.inputs.forEach(input => {
+                newObject[input.name] = input.value;
+            });
+            return newObject;
+        } else if (blockType == BlockTypes.Inherit) {
+            var inheritedObject = Object.create(currentBlock.inputs[0].value);
+            currentBlock.inputs.slice(1).forEach(input => {
+                inheritedObject[input.name] = input.value;
+            });
+            return inheritedObject;
         } else {
             // add handling for other types
             throw "Unrecognized type " + blockType;
