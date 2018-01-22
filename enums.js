@@ -37,10 +37,18 @@ var BlockTypes = {
     // preview block when placing
     Ghost: "ghost",
 
-    // unsupported
-    BooleanOperator: "booleanOp",
+    // Structs
     Create: "create",
     Inherit: "inherit",
+
+    // Map related
+    DictionaryInitialize: "dictionaryInitialize",
+    DictionaryInsert: "dictionaryInsert",
+    DictionaryContains: "dictionaryContains",
+    DictionaryGet: "dictionaryGet",
+
+    // unsupported
+    BooleanOperator: "booleanOp",
     Literal: "literal",
     Prompt: "prompt"
 };

@@ -399,3 +399,109 @@ class ObjectInheritBlock extends BaseBlock {
         this.inputs.push(newInput);
     }
 }
+
+class DictionaryInitializationBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.DictionaryInitialize, position);
+        this.id = nextId();
+        this.inputs = [];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Dictionary"
+    }
+}
+
+class DictionaryInsertBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.DictionaryInsert, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("dictionary"),
+            new Input("key"),
+            new Input("value")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Insert"
+    }
+}
+
+class DictionaryGetBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.DictionaryGet, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("dictionary"),
+            new Input("key")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Insert"
+    }
+}
+
+class DictionaryContainsBlock extends BaseBlock {
+    constructor(position) {
+        super(BlockTypes.DictionaryContains, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("dictionary"),
+            new Input("key")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+
+    getName() {
+        return "Insert"
+    }
+}

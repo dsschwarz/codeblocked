@@ -190,6 +190,18 @@ class ModuleEvaluator {
                 inheritedObject[input.name] = input.value;
             });
             return inheritedObject;
+        } else if (blockType == BlockTypes.DictionaryInitialize) {
+            return {};
+        } else if (blockType == BlockTypes.DictionaryInsert) {
+            var newDict = Object.assign({}, currentBlock.inputs[0].value);
+            newDict[currentBlock.inputs[1].value] = currentBlock.inputs[2].value;
+            return newDict;
+        } else if (blockType == BlockTypes.DictionaryContains) {
+            var dict = currentBlock.inputs[0].value;
+            return dict.hasOwnProperty(currentBlock.inputs[1].value);
+        } else if (blockType == BlockTypes.DictionaryGet) {
+            var dict = currentBlock.inputs[0].value;
+            return dict[currentBlock.inputs[1].value];
         } else {
             // add handling for other types
             throw "Unrecognized type " + blockType;
