@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-   objectCreationExample(state);
+   createFibonacciExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
@@ -64,11 +64,11 @@ function createFibonacciExample(state) {
     var literal2 = new JavascriptBlock("Literal", new BlockPosition(647, 5), []);
     literal2.setScript("2");
 
-    var lessThan = new OperatorBlock(BlockTypes.LessThan, new BlockPosition(377, 200));
+    var lessThan = new OperatorBlock(Operators.LessThan, new BlockPosition(377, 200));
 
-    var minus = new OperatorBlock(BlockTypes.Subtract, new BlockPosition(505, 104));
-    var minus2 = new OperatorBlock(BlockTypes.Subtract, new BlockPosition(630, 104));
-    var plus = new OperatorBlock(BlockTypes.Add, new BlockPosition(566, 297));
+    var minus = new OperatorBlock(Operators.Subtract, new BlockPosition(505, 104));
+    var minus2 = new OperatorBlock(Operators.Subtract, new BlockPosition(630, 104));
+    var plus = new OperatorBlock(Operators.Add, new BlockPosition(566, 297));
 
     var moduleBlock = new ModuleBlock(module, new BlockPosition(505, 200));
     var moduleBlock2 = new ModuleBlock(module, new BlockPosition(630, 200));
@@ -112,7 +112,7 @@ function createFibonacciExample(state) {
     var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
     promptBlock.setScript("prompt('Enter a number')");
     var logger = new JavascriptBlock("Logger", new BlockPosition(500, 300), [new Input("value")]);
-    logger.setScript("log(this.value)");
+    logger.setScript("console.log(this.value)");
 
     state.program.topLevelModule.addBlock(moduleBlockRoot);
     state.program.topLevelModule.addBlock(promptBlock);
@@ -129,14 +129,14 @@ function createMultiplyExample(state) {
     var block3 = new JavascriptBlock("Prompt", new BlockPosition(200, 10), []);
     block3.setScript("prompt('Enter a number')");
 
-    var block2 = new OperatorBlock(BlockTypes.Multiply, new BlockPosition(160, 170));
+    var block2 = new OperatorBlock(Operators.Multiply, new BlockPosition(160, 170));
 
     var block4 = new JavascriptBlock("Output", new BlockPosition(160, 300), [new Input("value")]);
-    block4.setScript("log('Multiplied: ' + this.value)");
+    block4.setScript("console.log('Multiplied: ' + this.value)");
 
     var squareModule = new Module("Square");
     squareModule.addInput(new Input("a"));
-    var block = new OperatorBlock(BlockTypes.Multiply, new BlockPosition(200, 100));
+    var block = new OperatorBlock(Operators.Multiply, new BlockPosition(200, 100));
     squareModule.createConnection(squareModule.inputBlocks[0], block, 0);
     squareModule.createConnection(squareModule.inputBlocks[0], block, 1);
     squareModule.createConnection(block, squareModule.outputBlock, 0);
@@ -144,7 +144,7 @@ function createMultiplyExample(state) {
     var block5 = new ModuleBlock(squareModule, new BlockPosition(300, 170));
 
     var block6 = new JavascriptBlock("Output", new BlockPosition(300, 300), [new Input("value")]);
-    block6.setScript("log('Squared: ' + this.value)");
+    block6.setScript("console.log('Squared: ' + this.value)");
 
     var collector = new JavascriptBlock("END", new BlockPosition(200, 450), [new Input(), new Input()]);
 

@@ -264,11 +264,10 @@ class OutputBlock extends BaseBlock {
 
 // for numeric operators
 class OperatorBlock extends BaseBlock {
-    constructor(blockType, position) {
-        if (!_.contains(OperatorTypes, blockType)) throw "Block type " + blockType + " is not an operator";
-
-        super(blockType, position);
+    constructor(operatorType, position) {
+        super(BlockTypes.Operator, position);
         this.id = nextId();
+        this.operator = operatorType;
         this.inputs = [
             new Input("a"),
             new Input("b")
@@ -280,21 +279,21 @@ class OperatorBlock extends BaseBlock {
     }
 
     getName() {
-        if (this.getType() == BlockTypes.Multiply) {
+        if (this.operator == Operators.Multiply) {
             return "Multiply";
-        } else if (this.getType() == BlockTypes.Divide) {
+        } else if (this.operator == Operators.Divide) {
             return "Divide";
-        } else if (this.getType() == BlockTypes.Add) {
+        } else if (this.operator == Operators.Add) {
             return "Add";
-        } else if (this.getType() == BlockTypes.Subtract) {
+        } else if (this.operator == Operators.Subtract) {
             return "Subtract";
-        } else if (this.getType() == BlockTypes.Exponent) {
+        } else if (this.operator == Operators.Exponent) {
             return "Exponent";
-        } else if (this.getType() == BlockTypes.Equals) {
+        } else if (this.operator == Operators.Equals) {
             return "Equals";
-        } else if (this.getType() == BlockTypes.GreaterThan) {
+        } else if (this.operator == Operators.GreaterThan) {
             return "Greater";
-        } else if (this.getType() == BlockTypes.LessThan) {
+        } else if (this.operator == Operators.LessThan) {
             return "Smaller";
         } else {
             throw "Block type " + this.blockType + " has no defined display name";

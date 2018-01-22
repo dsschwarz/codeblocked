@@ -24,14 +24,7 @@ var BlockTypes = {
     And: "and",
 
     // operators
-    Equals: "equals",
-    GreaterThan: "greaterThan",
-    LessThan: "lessThan",
-    Multiply: "multiply",
-    Divide: "divide",
-    Add: "add",
-    Subtract: "subtract",
-    Exponent: "exponent",
+    Operator: "operator",
 
     JavaScript: "javascript",
     // preview block when placing
@@ -53,13 +46,13 @@ var BlockTypes = {
     Prompt: "prompt"
 };
 
-var OperatorTypes = [
-    BlockTypes.Equals,
-    BlockTypes.GreaterThan,
-    BlockTypes.LessThan,
-    BlockTypes.Multiply,
-    BlockTypes.Divide,
-    BlockTypes.Add,
-    BlockTypes.Subtract,
-    BlockTypes.Exponent
-];
+var Operators = {
+    Equals: "equals",
+    GreaterThan: "greaterThan",
+    LessThan: "lessThan",
+    Multiply: "multiply",
+    Divide: "divide",
+    Add: "add",
+    Subtract: "subtract",
+    Exponent: "exponent",
+};

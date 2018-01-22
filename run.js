@@ -148,64 +148,8 @@ class ModuleEvaluator {
 
     evaluateForValue(currentBlock) {
         var blockType = currentBlock.block.getType();
-        if (blockType == BlockTypes.JavaScript) {
-            return this.evaluateJavascriptBlock(currentBlock);
-        } else if (blockType == BlockTypes.Module) {
-            if (this._hasLatestResult) {
-                this._hasLatestResult = false;
-                return this._latestResult;
-            } else {
-                throw "No result available when evaluating ModuleBlock";
-            }
-        } else if (_.contains(OperatorTypes, blockType)) {
-            var operatorFunction = getOperator(blockType);
-            return operatorFunction(currentBlock.inputs[0].value, currentBlock.inputs[1].value);
-        } else if (blockType == BlockTypes.Input) {
-            var inputIndex = this.module.inputBlocks.findIndex(block => block.getId() == currentBlock.block.getId());
-            if (inputIndex < 0) throw "Input not found. id: " + currentBlock.block.getId();
-
-            return this.inputs[inputIndex].value;
-        } else if (blockType == BlockTypes.If) {
-            var flag = currentBlock.inputs[0].value;
-            /**
-             * @type {EvaluationInput}
-             */
-            var resultInput;
-            if (flag) {
-                resultInput = currentBlock.inputs[1];
-            } else {
-                resultInput = currentBlock.inputs[2];
-            }
-            if (!resultInput.satisfied) throw "If block result not satisfied";
-            return resultInput.value;
-        } else if (blockType == BlockTypes.Create) {
-            var newObject = {};
-            currentBlock.inputs.forEach(input => {
-                newObject[input.name] = input.value;
-            });
-            return newObject;
-        } else if (blockType == BlockTypes.Inherit) {
-            var inheritedObject = Object.create(currentBlock.inputs[0].value);
-            currentBlock.inputs.slice(1).forEach(input => {
-                inheritedObject[input.name] = input.value;
-            });
-            return inheritedObject;
-        } else if (blockType == BlockTypes.DictionaryInitialize) {
-            return {};
-        } else if (blockType == BlockTypes.DictionaryInsert) {
-            var newDict = Object.assign({}, currentBlock.inputs[0].value);
-            newDict[currentBlock.inputs[1].value] = currentBlock.inputs[2].value;
-            return newDict;
-        } else if (blockType == BlockTypes.DictionaryContains) {
-            var dict = currentBlock.inputs[0].value;
-            return dict.hasOwnProperty(currentBlock.inputs[1].value);
-        } else if (blockType == BlockTypes.DictionaryGet) {
-            var dict = currentBlock.inputs[0].value;
-            return dict[currentBlock.inputs[1].value];
-        } else {
-            // add handling for other types
-            throw "Unrecognized type " + blockType;
-        }
+        var evaluator = getEvaluator(blockType);
+        return evaluator(currentBlock, this);
     }
 
     outputBlockId() {
@@ -259,20 +203,6 @@ class ModuleEvaluator {
 
         this._latestResult = result;
         this._hasLatestResult = true;
-    }
-
-    /**
-     * @param evaluationBlock {EvaluationBlock}
-     * @returns {*}
-     */
-    evaluateJavascriptBlock(evaluationBlock) {
-
-        var scope = {};
-        evaluationBlock.inputs.forEach(function (evaluationInput) {
-            scope[evaluationInput.name] = evaluationInput.value;
-        });
-
-        return _execute.call(scope, evaluationBlock.block.script, this.reporter);
     }
 
     /**
@@ -359,13 +289,6 @@ class ModuleEvaluator {
             return evaluationBlock.inputs
         }
     }
-}
-
-function _execute(string, reporter) {
-    var error = reporter.error.bind(reporter);
-    var warn = reporter.warn.bind(reporter);
-    var log = reporter.log.bind(reporter);
-    return eval(string);
 }
 
 class Message {
