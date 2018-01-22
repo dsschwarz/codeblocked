@@ -27,9 +27,8 @@ body {
 }
 
 .click-catcher {
-    fill-opacity: 0;
-    width: 100%;
-    height: 100%;
+    fill: none;
+    pointer-events: all;
 }
 
 .ghostBlock {

@@ -116,6 +116,12 @@ class Renderer {
     renderModuleContainer(parentElement) {
         var renderer = this;
 
+        parentElement.selectAll(".click-catcher").data([0]).enter().append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .classed("click-catcher", true)
+            .call(d3.zoom().on("zoom", zoomed));
+
         var moduleElement = parentElement.selectAll(".moduleElement")
             .data([0]);
 
@@ -123,8 +129,9 @@ class Renderer {
             .append("g")
             .classed("moduleElement", true);
 
-        newElem.append("rect")
-            .classed("click-catcher", true);
+        function zoomed() {
+            moduleElement.attr("transform", d3.event.transform);
+        }
 
         newElem
             .on("click", function () {
