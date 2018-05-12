@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-   createFibonacciExample(state);
+    createFibonacciTailRecursiveExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
@@ -112,6 +112,145 @@ function createFibonacciExample(state) {
     var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
     promptBlock.setScript("prompt('Enter a number')");
     var logger = new JavascriptBlock("Logger", new BlockPosition(500, 300), [new Input("value")]);
+    logger.setScript("console.log(this.value)");
+
+    state.program.topLevelModule.addBlock(moduleBlockRoot);
+    state.program.topLevelModule.addBlock(promptBlock);
+    state.program.topLevelModule.addBlock(logger);
+    state.program.topLevelModule.createConnection(promptBlock, moduleBlockRoot, 0);
+    state.program.topLevelModule.createConnection(moduleBlockRoot, logger, 0);
+    state.program.topLevelModule.createConnection(logger, state.program.topLevelModule.outputBlock, 0);
+}
+
+function createFibonacciTailRecursiveExample(state) {
+
+    function createOuter(innerModule) {
+        var outer = new Module("Fibonacci");
+        outer.addInput(new Input("n"));
+
+        outer.inputBlocks[0].getPosition().x = 371;
+        outer.inputBlocks[0].getPosition().y = 66;
+
+
+        var literal1 = new JavascriptBlock("One", new BlockPosition(590, 66), []);
+        literal1.setScript("1");
+
+        var literal2 = new JavascriptBlock("Two", new BlockPosition(482, 66), []);
+        literal2.setScript("2");
+
+        var literal3 = new JavascriptBlock("Three", new BlockPosition(720, 66), []);
+        literal3.setScript("3");
+
+        var equalsBlock = new OperatorBlock(Operators.Equals, new BlockPosition(398, 305));
+        var equalsBlock2 = new OperatorBlock(Operators.Equals, new BlockPosition(565, 200));
+        var ifBlock = new IfBlock(new BlockPosition(500, 404));
+        var ifBlock2 = new IfBlock(new BlockPosition(590, 305));
+
+        var moduleBlock = new ModuleBlock(innerModule, new BlockPosition(709, 200));
+
+        outer.addBlock(literal1);
+        outer.addBlock(literal2);
+        outer.addBlock(literal3);
+        outer.addBlock(equalsBlock);
+        outer.addBlock(equalsBlock2);
+        outer.addBlock(ifBlock);
+        outer.addBlock(ifBlock2);
+        outer.addBlock(moduleBlock);
+
+        var n = outer.inputBlocks[0];
+
+        outer.createConnection(literal1, moduleBlock, 0);
+        outer.createConnection(literal1, moduleBlock, 1);
+        outer.createConnection(literal3, moduleBlock, 2);
+        outer.createConnection(n, moduleBlock, 3);
+
+        outer.createConnection(n, equalsBlock, 0);
+        outer.createConnection(literal1, equalsBlock, 1);
+
+        outer.createConnection(n, equalsBlock2, 0);
+        outer.createConnection(literal2, equalsBlock2, 1);
+
+        outer.createConnection(equalsBlock2, ifBlock2, 0);
+        outer.createConnection(literal1, ifBlock2, 1);
+        outer.createConnection(moduleBlock, ifBlock2, 2);
+
+        outer.createConnection(equalsBlock, ifBlock, 0);
+        outer.createConnection(literal1, ifBlock, 1);
+        outer.createConnection(ifBlock2, ifBlock, 2);
+
+        outer.createConnection(ifBlock, outer.outputBlock, 0);
+
+        return outer;
+    }
+
+    function createInner() {
+        var inner = new Module("Fibonacci Recursive");
+        inner.addInput(new Input("prev1"));
+        inner.addInput(new Input("prev2"));
+        inner.addInput(new Input("counter"));
+        inner.addInput(new Input("n"));
+
+        inner.inputBlocks[0].getPosition().x = 356;
+        inner.inputBlocks[0].getPosition().y = 4;
+        inner.inputBlocks[1].getPosition().x = 476;
+        inner.inputBlocks[1].getPosition().y = 4;
+        inner.inputBlocks[2].getPosition().x = 596;
+        inner.inputBlocks[2].getPosition().y = 4;
+        inner.inputBlocks[3].getPosition().x = 836;
+        inner.inputBlocks[3].getPosition().y = 4;
+
+        var literal1 = new JavascriptBlock("One", new BlockPosition(716, 23), []);
+        literal1.setScript("1");
+
+        var summed = new OperatorBlock(Operators.Add, new BlockPosition(462, 156));
+        var plusOne = new OperatorBlock(Operators.Add, new BlockPosition(653, 156));
+        var equalsBlock = new OperatorBlock(Operators.Equals, new BlockPosition(475, 289));
+        var ifBlock = new IfBlock(new BlockPosition(500, 422));
+        var moduleBlock = new ModuleBlock(inner, new BlockPosition(643, 289));
+
+        inner.outputBlock.getPosition().y = 555;
+
+        inner.addBlock(literal1);
+        inner.addBlock(summed);
+        inner.addBlock(plusOne);
+        inner.addBlock(equalsBlock);
+        inner.addBlock(ifBlock);
+        inner.addBlock(moduleBlock);
+
+        var inputs = inner.inputBlocks;
+
+        inner.createConnection(inputs[2], equalsBlock, 0);
+        inner.createConnection(inputs[3], equalsBlock, 1);
+
+        inner.createConnection(inputs[0], summed, 0);
+        inner.createConnection(inputs[1], summed, 1);
+
+        inner.createConnection(inputs[2], plusOne, 0);
+        inner.createConnection(literal1, plusOne, 1);
+
+        inner.createConnection(inputs[1], moduleBlock, 0);
+        inner.createConnection(summed, moduleBlock, 1);
+        inner.createConnection(plusOne, moduleBlock, 2);
+        inner.createConnection(inputs[3], moduleBlock, 3);
+
+        inner.createConnection(equalsBlock, ifBlock, 0);
+        inner.createConnection(summed, ifBlock, 1);
+        inner.createConnection(moduleBlock, ifBlock, 2);
+
+        inner.createConnection(ifBlock, inner.outputBlock, 0);
+
+        return inner;
+    }
+
+
+    var innerModule = createInner();
+    var outerModule = createOuter(innerModule);
+
+
+    var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
+    promptBlock.setScript("prompt('Enter a number')");
+    var moduleBlockRoot = new ModuleBlock(outerModule, new BlockPosition(500, 180));
+    var logger = new JavascriptBlock("Logger", new BlockPosition(500, 340), [new Input("value")]);
     logger.setScript("console.log(this.value)");
 
     state.program.topLevelModule.addBlock(moduleBlockRoot);
