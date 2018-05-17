@@ -132,14 +132,14 @@ function createFibonacciTailRecursiveExample(state) {
         outer.inputBlocks[0].getPosition().y = 66;
 
 
-        var literal1 = new JavascriptBlock("One", new BlockPosition(590, 66), []);
-        literal1.setScript("1");
+        var literal1 = new NumberBlock(new BlockPosition(590, 66));
+        literal1.setValue(1);
 
-        var literal2 = new JavascriptBlock("Two", new BlockPosition(482, 66), []);
-        literal2.setScript("2");
+        var literal2 = new NumberBlock(new BlockPosition(482, 66));
+        literal2.setValue(2);
 
-        var literal3 = new JavascriptBlock("Three", new BlockPosition(720, 66), []);
-        literal3.setScript("3");
+        var literal3 = new NumberBlock(new BlockPosition(720, 66));
+        literal3.setValue(3);
 
         var equalsBlock = new OperatorBlock(Operators.Equals, new BlockPosition(398, 305));
         var equalsBlock2 = new OperatorBlock(Operators.Equals, new BlockPosition(565, 200));

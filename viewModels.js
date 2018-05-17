@@ -19,6 +19,8 @@ createSidePanelVM = function (state) {
             var blockType = state.selectedBlock.getType();
             if (blockType == BlockTypes.Module) {
                 return _createModuleBlockVM(state.selectedBlock, state);
+            } else if (blockType == BlockTypes.Literal) {
+                return _literalBlockVM(state.selectedBlock, state);
             } else {
                 return _basicBlockVM(state.selectedBlock);
             }
@@ -123,6 +125,25 @@ function _createModuleBlockVM(block, state) {
     return viewModel;
 }
 
+function _literalBlockVM(block, state) {
+    var viewModel = {};
+
+    if (block.literalType == LiteralTypes.String) {
+        viewModel.templateName = TemplateNames.stringLiteral;
+    } else if (block.literalType == LiteralTypes.Number) {
+        viewModel.templateName = TemplateNames.numericLiteral;
+    }
+
+    viewModel.value = ko.observable(block.getValue());
+
+    viewModel.value.subscribe((value) => {
+        block.setValue(value);
+        state.trigger(ChangeTopics.Blocks);
+    });
+
+    return viewModel;
+}
+
 function _noBlockVM() {
     return {
         templateName: ko.observable(TemplateNames.empty)
@@ -180,5 +201,7 @@ function createModulePathVM(state) {
 var TemplateNames = {
     empty: "no-selected-block-template",
     module: "module-block-template",
-    basic: "basic-block-template"
+    basic: "basic-block-template",
+    numericLiteral: "numeric-literal-block-template",
+    stringLiteral: "string-literal-block-template"
 };

@@ -93,6 +93,12 @@ BlockEvaluators[BlockTypes.Inherit] = (currentBlock) => {
     return inheritedObject;
 };
 
+BlockEvaluators[BlockTypes.Literal] = (currentBlock) => {
+    // @type {LiteralBlock}
+    let block = currentBlock.block;
+    return block.getValue();
+};
+
 function getEvaluator(blockType) {
     if (BlockEvaluators.hasOwnProperty(blockType)) {
         return BlockEvaluators[blockType];

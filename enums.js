@@ -19,6 +19,8 @@ var BlockTypes = {
     Input: "input",
     Output: "output",
 
+    Literal: "literal",
+
     // control flow
     If: "if",
     And: "and",
@@ -42,7 +44,6 @@ var BlockTypes = {
 
     // unsupported
     BooleanOperator: "booleanOp",
-    Literal: "literal",
     Prompt: "prompt"
 };
 
@@ -55,4 +56,9 @@ var Operators = {
     Add: "add",
     Subtract: "subtract",
     Exponent: "exponent",
+};
+
+var LiteralTypes = {
+    String: "string",
+    Number: "number"
 };

@@ -262,6 +262,57 @@ class OutputBlock extends BaseBlock {
     }
 }
 
+
+
+class LiteralBlock extends BaseBlock {
+    constructor(position, literalType) {
+        super(BlockTypes.Literal, position);
+        this.id = nextId();
+        this.value = undefined;
+        this.literalType = literalType;
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return this.value !== undefined ? this.value.toString() : "Not Set";
+    }
+
+    getValue() {
+        return this.value;
+    }
+}
+
+class TextBlock extends LiteralBlock {
+    constructor(position) {
+        super(position, LiteralTypes.String);
+    }
+
+    setValue(value) {
+        this.value = value.toString();
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+}
+
+class NumberBlock extends LiteralBlock {
+    constructor(position) {
+        super(position, LiteralTypes.Number);
+    }
+
+    setValue(value) {
+        this.value = +value;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+}
+
 // for numeric operators
 class OperatorBlock extends BaseBlock {
     constructor(operatorType, position) {
