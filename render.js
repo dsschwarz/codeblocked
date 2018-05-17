@@ -116,10 +116,12 @@ class Renderer {
     renderModuleContainer(parentElement) {
         var renderer = this;
 
-        parentElement.selectAll(".click-catcher").data([0]).enter().append("rect")
+        var clickCatcher = parentElement.selectAll(".click-catcher").data([0]).enter().append("rect")
             .attr("width", "100%")
             .attr("height", "100%")
-            .classed("click-catcher", true)
+            .classed("click-catcher", true);
+
+        clickCatcher
             .call(d3.zoom().on("zoom", zoomed));
 
         var moduleElement = parentElement.selectAll(".moduleElement")
@@ -133,19 +135,14 @@ class Renderer {
             moduleElement.attr("transform", d3.event.transform);
         }
 
-        newElem
+        clickCatcher
             .on("click", function () {
                 if (renderer.state.mode == Modes.Placement) {
+                    // TODO account for zoom and pan
                     var blockPosition = new GhostBlock("", d3.event.offsetX, d3.event.offsetY).getPosition();
 
                     var newBlock;
-                    // if (type == "0") {
-                    //     newBlock = ModuleBlock.create(blockPosition);
-                    // } else {
-                    //     var blockType = BlockTypes.Multiply;
-                    //     newBlock = new OperatorBlock(blockType, blockPosition);
-                    // }
-                    debugger;
+                    newBlock = ModuleBlock.create(blockPosition);
                     renderer.state.currentModule().addBlock(newBlock);
                     renderer.state.selectBlock(newBlock);
                     renderer.state.setMode(Modes.None);

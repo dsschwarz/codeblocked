@@ -236,12 +236,12 @@ class InputBlock extends BaseBlock {
 }
 
 class OutputBlock extends BaseBlock {
-    constructor(inputType, position) {
+    constructor(input, position) {
         super(
             BlockTypes.Output,
             position || new BlockPosition(500, 500));
         this.id = nextId();
-        this.input = inputType || Type.untyped(); // TODO infer type
+        this.input = input || new Input("Value"); // TODO infer type
     }
 
 
@@ -265,10 +265,15 @@ class OutputBlock extends BaseBlock {
 
 
 class LiteralBlock extends BaseBlock {
-    constructor(position, literalType) {
+    /**
+     * @param position {BlockPosition}
+     * @param literalType {LiteralTypes}
+     * @param value optional
+     */
+    constructor(position, literalType, value) {
         super(BlockTypes.Literal, position);
         this.id = nextId();
-        this.value = undefined;
+        this.value = value;
         this.literalType = literalType;
     }
 
@@ -286,8 +291,8 @@ class LiteralBlock extends BaseBlock {
 }
 
 class TextBlock extends LiteralBlock {
-    constructor(position) {
-        super(position, LiteralTypes.String);
+    constructor(position, value) {
+        super(position, LiteralTypes.String, value);
     }
 
     setValue(value) {
@@ -300,8 +305,8 @@ class TextBlock extends LiteralBlock {
 }
 
 class NumberBlock extends LiteralBlock {
-    constructor(position) {
-        super(position, LiteralTypes.Number);
+    constructor(position, value) {
+        super(position, LiteralTypes.Number, value);
     }
 
     setValue(value) {

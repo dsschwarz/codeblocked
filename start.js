@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-    createFibonacciTailRecursiveExample(state);
+    objectCreationExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
@@ -11,11 +11,9 @@ $(function () {
 });
 
 function objectCreationExample(state) {
-    var literal1 = new JavascriptBlock("Literal", new BlockPosition(300, 5), []);
-    literal1.setScript("1");
+    var literal1 = new NumberBlock(new BlockPosition(300, 5), 1);
 
-    var literal2 = new JavascriptBlock("Literal", new BlockPosition(500, 5), []);
-    literal2.setScript("\"Human\"");
+    var literal2 = new TextBlock(new BlockPosition(500, 5), "Human");
 
     var create = new ObjectCreationBlock(new BlockPosition(400, 170));
     create.createInput();
@@ -23,11 +21,9 @@ function objectCreationExample(state) {
     create.inputs[0].name = "Rank";
     create.inputs[1].name = "Race";
 
-    var literal3 = new JavascriptBlock("Literal", new BlockPosition(520, 170), []);
-    literal3.setScript("\"Brawler\"");
+    var literal3 = new TextBlock(new BlockPosition(520, 170), "Brawler");
 
-    var literal4 = new JavascriptBlock("Literal", new BlockPosition(630, 170), []);
-    literal4.setScript("2");
+    var literal4 = new NumberBlock(new BlockPosition(630, 170), 2);
 
     var inherit = new ObjectInheritBlock(new BlockPosition(500, 300));
     inherit.createInput();
@@ -58,11 +54,9 @@ function createFibonacciExample(state) {
     module.inputBlocks[0].getPosition().x = 359;
     module.inputBlocks[0].getPosition().y = 5;
 
-    var literal1 = new JavascriptBlock("Literal", new BlockPosition(500, 5), []);
-    literal1.setScript("1");
+    var literal1 = new NumberBlock(new BlockPosition(500, 5), 1);
 
-    var literal2 = new JavascriptBlock("Literal", new BlockPosition(647, 5), []);
-    literal2.setScript("2");
+    var literal2 = new NumberBlock(new BlockPosition(647, 5), 2);
 
     var lessThan = new OperatorBlock(Operators.LessThan, new BlockPosition(377, 200));
 
@@ -199,8 +193,7 @@ function createFibonacciTailRecursiveExample(state) {
         inner.inputBlocks[3].getPosition().x = 836;
         inner.inputBlocks[3].getPosition().y = 4;
 
-        var literal1 = new JavascriptBlock("One", new BlockPosition(716, 23), []);
-        literal1.setScript("1");
+        var literal1 = new NumberBlock(new BlockPosition(716, 23), 1);
 
         var summed = new OperatorBlock(Operators.Add, new BlockPosition(462, 156));
         var plusOne = new OperatorBlock(Operators.Add, new BlockPosition(653, 156));
@@ -262,8 +255,7 @@ function createFibonacciTailRecursiveExample(state) {
 }
 
 function createMultiplyExample(state) {
-    var block1 = new JavascriptBlock("Literal", new BlockPosition(10, 10), []);
-    block1.setScript("7");
+    var block1 = new NumberBlock(new BlockPosition(10, 10), 7);
 
     var block3 = new JavascriptBlock("Prompt", new BlockPosition(200, 10), []);
     block3.setScript("prompt('Enter a number')");
