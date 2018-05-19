@@ -33,6 +33,13 @@ BlockEvaluators[BlockTypes.JavaScript] = (currentBlock) => {
     return _execute.call(scope, block.script);
 };
 
+
+BlockEvaluators[BlockTypes.Prompt] = (currentBlock) => {
+    // @type PromptBlock
+    var block = currentBlock.block;
+    return prompt(block.promptText);
+};
+
 BlockEvaluators[BlockTypes.Operator] = (currentBlock) => {
     /**
      * @type {OperatorBlock}

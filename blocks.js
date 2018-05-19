@@ -104,17 +104,14 @@ class ModuleBlock extends BaseBlock {
         return new ModuleBlock(module, position);
     }
 
-    // Shared methods
     getId() {
         return this.id;
     }
 
-    // Shared methods
     getName() {
         return this.module.name;
     }
 
-    // Shared methods
     /**
      * @returns {Array<Input>}
      */
@@ -262,7 +259,26 @@ class OutputBlock extends BaseBlock {
     }
 }
 
+class PromptBlock extends BaseBlock {
 
+    constructor(position, promptText) {
+        super(BlockTypes.Prompt, position);
+        this.id = nextId();
+        this.promptText = promptText || "Enter a value";
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return "Prompt";
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+}
 
 class LiteralBlock extends BaseBlock {
     /**

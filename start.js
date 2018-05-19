@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-    objectCreationExample(state);
+    createFibonacciTailRecursiveExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
@@ -103,8 +103,7 @@ function createFibonacciExample(state) {
 
 
     var moduleBlockRoot = new ModuleBlock(module, new BlockPosition(500, 150));
-    var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
-    promptBlock.setScript("prompt('Enter a number')");
+    var promptBlock = new PromptBlock(new BlockPosition(500, 20), "Enter a number");
     var logger = new JavascriptBlock("Logger", new BlockPosition(500, 300), [new Input("value")]);
     logger.setScript("console.log(this.value)");
 
@@ -239,9 +238,7 @@ function createFibonacciTailRecursiveExample(state) {
     var innerModule = createInner();
     var outerModule = createOuter(innerModule);
 
-
-    var promptBlock = new JavascriptBlock("Prompt", new BlockPosition(500, 20), []);
-    promptBlock.setScript("prompt('Enter a number')");
+    var promptBlock = new PromptBlock(new BlockPosition(500, 20), "Enter a number");
     var moduleBlockRoot = new ModuleBlock(outerModule, new BlockPosition(500, 180));
     var logger = new JavascriptBlock("Logger", new BlockPosition(500, 340), [new Input("value")]);
     logger.setScript("console.log(this.value)");
@@ -257,8 +254,7 @@ function createFibonacciTailRecursiveExample(state) {
 function createMultiplyExample(state) {
     var block1 = new NumberBlock(new BlockPosition(10, 10), 7);
 
-    var block3 = new JavascriptBlock("Prompt", new BlockPosition(200, 10), []);
-    block3.setScript("prompt('Enter a number')");
+    var block3 = new PromptBlock(new BlockPosition(200, 10), "Enter a number");
 
     var block2 = new OperatorBlock(Operators.Multiply, new BlockPosition(160, 170));
 
