@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-    createFibonacciTailRecursiveExample(state);
+    createMultiplyExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();
@@ -104,8 +104,7 @@ function createFibonacciExample(state) {
 
     var moduleBlockRoot = new ModuleBlock(module, new BlockPosition(500, 150));
     var promptBlock = new PromptBlock(new BlockPosition(500, 20), "Enter a number");
-    var logger = new JavascriptBlock("Logger", new BlockPosition(500, 300), [new Input("value")]);
-    logger.setScript("console.log(this.value)");
+    var logger = new LoggerBlock(new BlockPosition(500, 300));
 
     state.program.topLevelModule.addBlock(moduleBlockRoot);
     state.program.topLevelModule.addBlock(promptBlock);
@@ -240,8 +239,7 @@ function createFibonacciTailRecursiveExample(state) {
 
     var promptBlock = new PromptBlock(new BlockPosition(500, 20), "Enter a number");
     var moduleBlockRoot = new ModuleBlock(outerModule, new BlockPosition(500, 180));
-    var logger = new JavascriptBlock("Logger", new BlockPosition(500, 340), [new Input("value")]);
-    logger.setScript("console.log(this.value)");
+    var logger = new LoggerBlock(new BlockPosition(500, 340));
 
     state.program.topLevelModule.addBlock(moduleBlockRoot);
     state.program.topLevelModule.addBlock(promptBlock);
@@ -258,8 +256,9 @@ function createMultiplyExample(state) {
 
     var block2 = new OperatorBlock(Operators.Multiply, new BlockPosition(160, 170));
 
-    var block4 = new JavascriptBlock("Output", new BlockPosition(160, 300), [new Input("value")]);
-    block4.setScript("console.log('Multiplied: ' + this.value)");
+    var blockMultipliedLiteral = new TextBlock(new BlockPosition(30, 170), "Multiplied: ");
+    var literalAdder = new OperatorBlock(Operators.Add, new BlockPosition(160, 300));
+    var block4 = new LoggerBlock(new BlockPosition(160, 430));
 
     var squareModule = new Module("Square");
     squareModule.addInput(new Input("a"));
@@ -268,27 +267,36 @@ function createMultiplyExample(state) {
     squareModule.createConnection(squareModule.inputBlocks[0], block, 1);
     squareModule.createConnection(block, squareModule.outputBlock, 0);
     squareModule.addBlock(block);
-    var block5 = new ModuleBlock(squareModule, new BlockPosition(300, 170));
+    var block5 = new ModuleBlock(squareModule, new BlockPosition(430, 170));
 
-    var block6 = new JavascriptBlock("Output", new BlockPosition(300, 300), [new Input("value")]);
-    block6.setScript("console.log('Squared: ' + this.value)");
+    var blockSquaredLiteral = new TextBlock(new BlockPosition(300, 170), "Squared: ");
+    var squareLiteralAdder = new OperatorBlock(Operators.Add, new BlockPosition(300, 300));
+    var block6 = new LoggerBlock(new BlockPosition(300, 430));
 
-    var collector = new JavascriptBlock("END", new BlockPosition(200, 450), [new Input(), new Input()]);
+    var collector = new JavascriptBlock("END", new BlockPosition(200, 560), [new Input(), new Input()]);
 
     var program = state.program;
     program.topLevelModule.addBlock(block1);
     program.topLevelModule.addBlock(block2);
     program.topLevelModule.addBlock(block3);
+    program.topLevelModule.addBlock(blockMultipliedLiteral);
+    program.topLevelModule.addBlock(literalAdder);
     program.topLevelModule.addBlock(block4);
     program.topLevelModule.addBlock(block5);
+    program.topLevelModule.addBlock(blockSquaredLiteral);
+    program.topLevelModule.addBlock(squareLiteralAdder);
     program.topLevelModule.addBlock(block6);
     program.topLevelModule.addBlock(collector);
 
     program.topLevelModule.connections.push(new Connection(block1.id, block2.id, 0));
     program.topLevelModule.connections.push(new Connection(block3.id, block2.id, 1));
-    program.topLevelModule.connections.push(new Connection(block2.id, block4.id, 0));
+    program.topLevelModule.connections.push(new Connection(blockMultipliedLiteral.id, literalAdder.id, 0));
+    program.topLevelModule.connections.push(new Connection(block2.id, literalAdder.id, 1));
+    program.topLevelModule.connections.push(new Connection(literalAdder.id, block4.id, 0));
     program.topLevelModule.connections.push(new Connection(block3.id, block5.id, 0));
-    program.topLevelModule.connections.push(new Connection(block5.id, block6.id, 0));
+    program.topLevelModule.connections.push(new Connection(blockSquaredLiteral.id, squareLiteralAdder.id, 0));
+    program.topLevelModule.connections.push(new Connection(block5.id, squareLiteralAdder.id, 1));
+    program.topLevelModule.connections.push(new Connection(squareLiteralAdder.id, block6.id, 0));
     program.topLevelModule.connections.push(new Connection(block4.id, collector.id, 0));
     program.topLevelModule.connections.push(new Connection(block6.id, collector.id, 1));
     program.topLevelModule.connections.push(new Connection(collector.id, program.topLevelModule.outputBlock.getId(), 0));

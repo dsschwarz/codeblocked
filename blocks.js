@@ -280,6 +280,33 @@ class PromptBlock extends BaseBlock {
     }
 }
 
+class LoggerBlock extends BaseBlock {
+
+    constructor(position) {
+        super(BlockTypes.Logger, position);
+        this.id = nextId();
+        this.inputs = [
+            new Input("value")
+        ];
+    }
+
+    getId() {
+        return this.id;
+    }
+
+    getName() {
+        return "Logger";
+    }
+
+    getInputs() {
+        return this.inputs;
+    }
+
+    getOutput() {
+        return Type.untyped();
+    }
+}
+
 class LiteralBlock extends BaseBlock {
     /**
      * @param position {BlockPosition}

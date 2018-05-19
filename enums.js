@@ -20,6 +20,8 @@ var BlockTypes = {
     Output: "output",
 
     Literal: "literal",
+    Prompt: "prompt",
+    Logger: "logger",
 
     // control flow
     If: "if",
@@ -43,8 +45,7 @@ var BlockTypes = {
     DictionaryGet: "dictionaryGet",
 
     // unsupported
-    BooleanOperator: "booleanOp",
-    Prompt: "prompt"
+    BooleanOperator: "booleanOp"
 };
 
 var Operators = {
