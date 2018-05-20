@@ -63,6 +63,9 @@ body {
     margin: 0;
     padding: 10px 0;
 }
+.action-bar button.selected {
+    background: #7ae;
+}
 
 .click-area {
     opacity: 0;

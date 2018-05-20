@@ -52,8 +52,8 @@ class Renderer {
             this.state.connectionHandler.reset();
         }
 
-        $("#" + this.mode + "-btn").removeClass("selected");
-        this.container.classed("mode-" + this.mode, false);
+        $("#" + this.state.mode + "-btn").removeClass("selected");
+        this.container.classed("mode-" + this.state.mode, false);
         this.container.classed("mode-" + mode, true);
         $("#" + mode + "-btn").addClass("selected");
         this.state.setMode(mode);
