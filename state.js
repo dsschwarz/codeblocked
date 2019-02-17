@@ -1,17 +1,7 @@
 class State {
     constructor() {
         this.program = new Program();
-
-        /**
-         * @type {Module[]}
-         */
-        this.modulePath = [this.program.topLevelModule];
-        /**
-         * @type {BaseBlock}
-         */
-        this.selectedBlock = null;
-        this.mode = Modes.None;
-        this.connectionHandler = new ConnectionHandler(this);
+        this._setStateForNewProgram();
         this.reporter = new Reporter();
 
         this._listeners = {};
@@ -72,5 +62,27 @@ class State {
     setMode(mode) {
         this.mode = mode;
         this.trigger(ChangeTopics.Mode);
+    }
+
+    setProgram(program) {
+        if (this.program === program) {
+            return;
+        }
+
+        this.program = program;
+        this._setStateForNewProgram();
+        this.trigger(ChangeTopics.Blocks);
+        this.trigger(ChangeTopics.Mode);
+        this.trigger(ChangeTopics.SelectedBlock);
+        this.trigger(ChangeTopics.Connections);
+        this.trigger(ChangeTopics.Modules);
+        this.trigger(ChangeTopics.ModulePath);
+    }
+
+    _setStateForNewProgram(){
+        this.modulePath = [this.program.topLevelModule];
+        this.selectedBlock = null;
+        this.mode = Modes.None;
+        this.connectionHandler = new ConnectionHandler(this);
     }
 }

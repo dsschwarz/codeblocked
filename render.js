@@ -32,6 +32,27 @@ class Renderer {
             evaluator.run();
         });
 
+        $("#load-btn").on("click", function () {
+            var raw = prompt("Enter save info");
+            var program = deserializeProgram(JSON.parse(raw));
+            that.state.setProgram(program);
+        });
+
+        $("#save-btn").on("click", function () {
+            var program = serializeProgram(that.state.program);
+            console.log(program);
+            console.log(JSON.stringify(program));
+        });
+        $("#check-btn").on("click", function () {
+            var program = JSON.stringify(serializeProgram(that.state.program));
+            var parsed = deserializeProgram(JSON.parse(program));
+            var serializedAgain = JSON.stringify(serializeProgram(parsed));
+
+            console.log(program);
+            console.log(serializedAgain);
+            console.log(program === serializedAgain);
+        });
+
 
         this.sidePanel = createSidePanelVM(state);
         this.modulePathViewModel = createModulePathVM(state);

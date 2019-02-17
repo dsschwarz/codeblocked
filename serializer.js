@@ -1,3 +1,21 @@
+class BlockConverter {
+
+    /**
+     * @param serializer {function<BaseBlock, string>}
+     * @param deserializer {function<string, Object{string: Module}, BaseBlock>}
+     */
+    constructor(serializer, deserializer) {
+        /**
+         * @type {Function.<BaseBlock, string>}
+         */
+        this.serializer = serializer;
+        /**
+         * @type {Function.<string, Object{string: Module}, BaseBlock>}
+         */
+        this.deserializer = deserializer;
+    }
+}
+
 /**
  * @param position {BlockPosition}
  */
@@ -13,6 +31,7 @@ function _deserializePosition(positionPayload) {
     var position = new BlockPosition(positionPayload.x, positionPayload.y);
     position.width = positionPayload.width;
     position.height = positionPayload.height;
+    return position;
 }
 
 /**
@@ -74,6 +93,7 @@ var conversions = {
             );
             block.script = payload.script;
             block.id = payload.id;
+            return block;
         }
     ),
     [BlockTypes.Input]: new BlockConverter(
@@ -263,24 +283,6 @@ var conversions = {
     )
 };
 
-class BlockConverter {
-
-    /**
-     * @param serializer {function<BaseBlock, string>}
-     * @param deserializer {function<string, Object{string: Module}, BaseBlock>}
-     */
-    constructor(serializer, deserializer) {
-        /**
-         * @type {Function.<BaseBlock, string>}
-         */
-        this.serializer = serializer;
-        /**
-         * @type {Function.<string, Object{string: Module}, BaseBlock>}
-         */
-        this.deserializer = deserializer;
-    }
-}
-
 /**
  * @param blockType
  * @returns {BlockConverter}
@@ -303,23 +305,22 @@ function serialize(block) {
     var serializer = converter.serializer;
     var payload = serializer(block);
 
-    return JSON.stringify({
+    return {
         blockType,
         payload
-    })
+    }
 }
 
 
 /**
- * @param serializedBlock {string}
+ * @param serializedBlock
  * @param moduleMap
  * @return BaseBlock
  */
 function deserialize(serializedBlock, moduleMap) {
-    var parsed = JSON.parse(serializedBlock);
-    var type = parsed.blockType;
+    var type = serializedBlock.blockType;
     var converter = _getConverter(type);
-    var deserialized = converter.deserializer(parsed.payload, moduleMap);
+    var deserialized = converter.deserializer(serializedBlock.payload, moduleMap);
     if (deserialized.blockType != type) {
         throw new Error("Deserialized block did not have correct type. Expected: " + type + " Actual: " + deserialized.blockType)
     }
@@ -341,59 +342,60 @@ class HalfDeserializedModule {
 
 /**
  * @param connection {Connection}
- * @return string
+ * @return Object
  */
 function serializeConnection(connection) {
-    return JSON.stringify({
+    return {
         fromBlockId: connection.fromBlockId,
         toBlockId: connection.toBlockId,
         inputIndex: connection.inputIndex
-    });
+    };
 }
 
 /**
- * @param serializedConnection {string}
+ * @param serializedConnection
  * @return Connection
  */
 function deserializeConnection(serializedConnection) {
-    var parsed = JSON.parse(serializedConnection);
-    return new Connection(parsed.fromBlockId, parsed.toBlockId, parsed.inputIndex);
+    return new Connection(serializedConnection.fromBlockId, serializedConnection.toBlockId, serializedConnection.inputIndex);
 }
 
 /**
  * @param module {Module}
- * @return string
+ * @return Object
  */
 function serializeModule(module) {
-    return JSON.stringify({
+    return {
         id: module.id,
+        name: module.name,
         serializedBlocks: module.blocks().map(serialize),
+        inputBlocks: module.inputBlocks.map(serialize),
+        outputBlock: serialize(module.outputBlock),
         connections: module.connections.map(serializeConnection),
         inputs: module.inputs.map(i => {
             return _serializeInput(i);
         })
-    })
+    }
 }
 
 /**
- * @param serializedModule {string}
+ * @param serializedModule
  * @return HalfDeserializedModule
  */
-function desializeModule(serializedModule) {
-    var parsed = JSON.parse(serializedModule);
-    var module = new Module(parsed.name);
-    module.id = parsed.id;
+function deserializeModule(serializedModule) {
+    var module = new Module(serializedModule.name);
+    module.id = serializedModule.id;
 
-    module.connections = parsed.connections.map((c) => {
+    module.connections = serializedModule.connections.map((c) => {
         return deserializeConnection(c);
     });
-    parsed.inputs.forEach((i) => {
-        var input = _deserializeInput(i);
-
-        module.addInput(input);
+    module.inputs = serializedModule.inputs.map((i) => {
+        return _deserializeInput(i);
     });
+    module.inputBlocks = serializedModule.inputBlocks.map(deserialize);
+    module.outputBlock = deserialize(serializedModule.outputBlock);
 
-    return new HalfDeserializedModule(parsed.serializedBlocks, module)
+    return new HalfDeserializedModule(serializedModule.serializedBlocks, module)
 }
 /**
  * @param halfDeserializedModule {HalfDeserializedModule}
@@ -413,17 +415,16 @@ function deserializeModuleBlocks(halfDeserializedModule, moduleMap) {
  * @param program {Program}
  */
 function serializeProgram(program) {
-    return JSON.stringify({
+    return {
         modules: program.modules.map((m) => serializeModule(m)),
         types: program.types.map((t) => t.name)
-    })
+    }
 }
-function desializeProgram(serializedProgram) {
-    var parsed = JSON.parse(serializedProgram);
+function deserializeProgram(serializedProgram) {
     /**
      * @type {Array<HalfDeserializedModule>}
      */
-    var halfDeserializedModules = parsed.modules.map(desializeModule);
+    var halfDeserializedModules = serializedProgram.modules.map(deserializeModule);
 
     /**
      * @type {{string: Module}}
@@ -434,8 +435,9 @@ function desializeProgram(serializedProgram) {
     var modules = halfDeserializedModules.map(hdModule => deserializeModuleBlocks(hdModule, lookupMap));
 
     var program = new Program();
+    program.topLevelModule = modules[0];
     program.modules = modules;
-    program.types = parsed.types.map((typeName) => new Type(typeName));
+    program.types = serializedProgram.types.map((typeName) => new Type(typeName));
 
     return program;
 }

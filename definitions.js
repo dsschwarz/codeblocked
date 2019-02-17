@@ -148,7 +148,7 @@ class Program {
         /**
          * @type {Array<Module>}
          */
-        this.modules = [];
+        this.modules = [this.topLevelModule];
 
         /**
          * @type {Array<Type>}
