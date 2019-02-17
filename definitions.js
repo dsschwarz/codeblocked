@@ -32,6 +32,10 @@ class Module {
         this.name = name;
         this.connections = [];
         this._blocks = [];
+
+        /**
+         * @type {Array<Input>}
+         */
         this.inputs = [];
         this.output = Type.untyped(); // TODO infer type
         /**
@@ -49,6 +53,13 @@ class Module {
      */
     allBlocks() {
         return this.inputBlocks.concat(this._blocks.concat(this.outputBlock));
+    }
+
+    /**
+     * @returns {Array.<BaseBlock>}
+     */
+    blocks() {
+        return this._blocks;
     }
 
     /**
@@ -138,6 +149,10 @@ class Program {
          * @type {Array<Module>}
          */
         this.modules = [];
+
+        /**
+         * @type {Array<Type>}
+         */
         this.types = [];
     }
 

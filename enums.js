@@ -13,6 +13,9 @@ var ChangeTopics = {
     ModulePath: "modulePath"
 };
 
+/**
+ * @type {Object<string>}
+ */
 var BlockTypes = {
     Module: "module",
     // I/O
