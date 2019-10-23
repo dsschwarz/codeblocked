@@ -81,6 +81,10 @@ class Module {
 
     removeBlock(block) {
         this._blocks = this._blocks.filter((b) => b !== block);
+        var connections = this.connections.filter(function (connection) {
+            return connection.fromBlockId === block.id || connection.toBlockId == block.id;
+        });
+        this.removeConnections(connections);
     }
 
     /**
