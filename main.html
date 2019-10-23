@@ -25,6 +25,9 @@
 <body class="layout-vertical">
     <div class="action-bar">
         <button id="placement-btn">Place Block</button>
+        <select data-bind="options: blockTypes, optionsText: 'name', value: placeBlockType">
+
+        </select>
         <button id="connection-btn">Connect</button>
         <button id="run-btn">Run!</button>
         <button id="load-btn">Load</button>
@@ -65,7 +68,8 @@
     <!-- ko if: !isEditingName()-->
     <select data-bind="options: modules, optionsText: 'name', value: linkedBlueprint"></select>
     <!-- /ko -->
-    <button data-bind="click: toggleEditingName, text: isEditingName() ? 'Done' : 'Rename'"></button>
+    <button data-bind="click: toggleEditingName, text: isEditingName() ? 'Done' : 'Rename'">
+    <button data-bind="click: $parent.removeBlock">Destroy</button>
     <div class="blueprint">
         <div class="inputs-container">
             <h3 class="subsection-title">Inputs</h3 >
@@ -87,6 +91,7 @@
 
 <script type="text/html" id="basic-block-template">
     <span>Name: </span><span data-bind="text: blockName" class="block-name"></span>
+    <button data-bind="click: $parent.removeBlock">Destroy</button>
     <br>
     <span>Block Type: </span><span data-bind="text: blockType" class="block-type"></span>
     <div class="blueprint">
@@ -105,10 +110,12 @@
 
 <script type="text/html" id="numeric-literal-block-template">
     <label>Value:</label><input type="number" data-bind="textInput: value">
+    <button data-bind="click: $parent.removeBlock">Destroy</button>
 </script>
 
 <script type="text/html" id="string-literal-block-template">
     <label>Value:</label><input data-bind="textInput: value">
+    <button data-bind="click: $parent.removeBlock">Destroy</button>
 </script>
 
 <script type="text/html" id="no-selected-block-template">

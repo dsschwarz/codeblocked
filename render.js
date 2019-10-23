@@ -19,9 +19,6 @@ class Renderer {
         $("#placement-btn").on("click", function () {
             that.setMode(Modes.Placement)
         });
-        $("#placement-btn-multiply").on("click", function () {
-            that.setMode(Modes.Placement)
-        });
 
         $("#connection-btn").on("click", function () {
             that.setMode(Modes.Connection)
@@ -56,9 +53,11 @@ class Renderer {
 
         this.sidePanel = createSidePanelVM(state);
         this.modulePathViewModel = createModulePathVM(state);
+        this.actionBarViewModel = createActionBarVM();
 
         ko.applyBindings(this.sidePanel, $(".side-panel")[0]);
         ko.applyBindings(this.modulePathViewModel, $(".module-path")[0]);
+        ko.applyBindings(this.actionBarViewModel, $(".action-bar")[0]);
 
         this.state.listenMany(
             [ChangeTopics.Blocks, ChangeTopics.Connections, ChangeTopics.SelectedBlock, ChangeTopics.Mode, ChangeTopics.Modules, ChangeTopics.ModulePath],
@@ -159,15 +158,17 @@ class Renderer {
         clickCatcher
             .on("click", function () {
                 if (renderer.state.mode == Modes.Placement) {
-                    // TODO account for zoom and pan
-                    var blockPosition = new GhostBlock("", d3.event.offsetX, d3.event.offsetY).getPosition();
+                    if (renderer.actionBarViewModel.placeBlockType) {
+                        // TODO account for zoom and pan
+                        var blockPosition = new GhostBlock("", d3.event.offsetX, d3.event.offsetY).getPosition();
 
-                    var newBlock;
-                    newBlock = ModuleBlock.create(blockPosition);
-                    renderer.state.currentModule().addBlock(newBlock);
-                    renderer.state.selectBlock(newBlock);
-                    renderer.state.setMode(Modes.None);
-                    renderer.state.trigger(ChangeTopics.Blocks);
+                        var newBlock;
+                        newBlock = renderer.actionBarViewModel.placeBlockType.createInstance(blockPosition);
+                        renderer.state.currentModule().addBlock(newBlock);
+                        renderer.state.selectBlock(newBlock);
+                        renderer.state.setMode(Modes.None);
+                        renderer.state.trigger(ChangeTopics.Blocks);
+                    }
                 }
             });
 

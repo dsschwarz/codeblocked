@@ -573,7 +573,7 @@ class DictionaryGetBlock extends BaseBlock {
     }
 
     getName() {
-        return "Insert"
+        return "Get"
     }
 }
 
@@ -600,6 +600,6 @@ class DictionaryContainsBlock extends BaseBlock {
     }
 
     getName() {
-        return "Insert"
+        return "Contains"
     }
 }

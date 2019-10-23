@@ -3,7 +3,7 @@ $(function () {
     var state  = new State();
     window.globalProgram = state.program;
 
-    createMultiplyExample(state);
+    // createMultiplyExample(state);
 
     var renderer = new Renderer(state);
     renderer.render();

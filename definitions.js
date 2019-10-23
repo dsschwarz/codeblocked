@@ -79,6 +79,10 @@ class Module {
         this._blocks.push(block);
     }
 
+    removeBlock(block) {
+        this._blocks = this._blocks.filter((b) => b !== block);
+    }
+
     /**
      * Add an input to this module
      * @param input {Input}

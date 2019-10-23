@@ -1,3 +1,66 @@
+createActionBarVM = function () {
+    var blockTypes = [
+        {
+            name:"Module",
+            createInstance: function createInstance(position) {
+                return new ModuleBlock(window.globalProgram.topLevelModule, position);
+            }
+        },
+        {
+            name:"New Module",
+            createInstance: function createInstance(position) {
+                return ModuleBlock.create(position);
+            }
+        }
+    ];
+
+    blockTypes = blockTypes.concat([
+        new DictionaryInitializationBlock(),
+        new DictionaryContainsBlock(),
+        new DictionaryInsertBlock(),
+        new DictionaryGetBlock(),
+        new IfBlock(),
+        new TextBlock(undefined, "Text"),
+        new NumberBlock(undefined, "Number"),
+        new LoggerBlock(),
+        new ObjectCreationBlock(),
+        new ObjectInheritBlock(),
+        new PromptBlock()
+    ].map(function (b) { return new BlockType(b) }));
+
+    blockTypes =  blockTypes.concat(Object.values(Operators).map((operator) => new OperatorBlockType(operator)));
+
+    return {
+        blockTypes,
+        placeBlockType: blockTypes[0]
+    }
+};
+
+class BlockType {
+
+    constructor(instance) {
+        this.blockConstructor = instance.constructor;
+        this.name = instance.getName();
+    }
+
+    createInstance(position) {
+        return new this.blockConstructor(position);
+    }
+}
+
+class OperatorBlockType {
+
+    constructor(operator) {
+        this.operator = operator;
+        this.name = new OperatorBlock(operator).getName();
+    }
+
+    createInstance(position) {
+        return new OperatorBlock(this.operator, position);
+    }
+}
+
+
 /**
  * @param state {State}
  */
@@ -27,6 +90,13 @@ createSidePanelVM = function (state) {
         }
     }
     viewModel.selectedBlock = ko.observable(createBlockVM());
+
+    viewModel.removeBlock = function removeBlock() {
+        if (state.selectedBlock) {
+            state.currentModule().removeBlock(state.selectedBlock);
+            state.trigger(ChangeTopics.Blocks);
+        }
+    };
 
     state.listen(ChangeTopics.SelectedBlock, function () {
         viewModel.selectedBlock(createBlockVM());
